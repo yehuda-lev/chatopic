@@ -22,6 +22,10 @@ def get_user_from_topic(topic_id: int):
 def is_tg_id_exists(tg_id: int) -> bool:
     return Users.exists(tg_id=str(tg_id))
 
+@db_session
+def is_topic_id_exists(topic_id: int) -> bool:
+    return Users.exists(topic_id=topic_id)
+
 
 def get_topic_id(tg_id: int):
     if get_user_from_tg_id(tg_id=tg_id) is None:
@@ -48,3 +52,8 @@ def get_topic_msg_id_from_user_msg_id(tg_id: int, msg_id: int):
 @db_session
 def get_tg_id_msg_id_from_topic_msg_id(topic_id: int, msg_topic_id: int):
     return Ids.get(topic_id=topic_id, topic_msg_id=msg_topic_id).user_msg_is
+
+
+@db_session
+def create_ids(tg_id: int, topic_id: int, user_msg_id: int, topic_msg_id):
+    return Ids(tg_id=str(tg_id), topic_id=topic_id, user_msg_id=user_msg_id, topic_msg_id=topic_msg_id)
