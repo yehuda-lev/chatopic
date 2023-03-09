@@ -40,6 +40,11 @@ def create_user(tg_id: int, topic_id: int, name_user: Optional[str], bio_user: O
     return Users(tg_id=str(tg_id), topic_id=topic_id, name_user=name_user, bio_user=bio_user)
 
 
-# @db_session
-# def get_topic_msg_id_from_msg_tg_id(tg_id: int, msg_id):
-#     return Ids.get()
+@db_session
+def get_topic_msg_id_from_user_msg_id(tg_id: int, msg_id: int):
+    return Ids.get(tg_id=str(tg_id), user_msg_id=msg_id).topic_msg_id
+
+
+@db_session
+def get_tg_id_msg_id_from_topic_msg_id(topic_id: int, msg_topic_id: int):
+    return Ids.get(topic_id=topic_id, topic_msg_id=msg_topic_id).user_msg_is
