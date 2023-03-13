@@ -1,7 +1,7 @@
 from typing import Optional
 
 from pony.orm import db_session, select
-from db.tables import Users, Ids
+from db.tables import Users, Ids, TgGroup, TgTopic, TgUser
 
 
 # @db_session
@@ -40,9 +40,10 @@ def get_tg_id(topic_id: int):
 
 
 @db_session
-def create_user(tg_id: int, topic_id: int, name_user: Optional[str], bio_user: Optional[str]):
-    return Users(tg_id=str(tg_id), topic_id=topic_id, name_user=name_user, bio_user=bio_user)
-
+def create_user(tg_id: int, group_id: int, topic_id: int, name: Optional[str]) -> TgUser:
+    group = TgGroup[group_id]
+    topic = TgTopic(id=str(topic_id), group=group, name=name)
+    return TgUser(id=str(tg_id), topic=topic)
 
 @db_session
 def get_topic_msg_id_from_user_msg_id(tg_id: int, msg_id: int):
