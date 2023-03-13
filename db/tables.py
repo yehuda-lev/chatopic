@@ -1,27 +1,34 @@
-from pony.orm import (Database, Required, Optional)
+from pony.orm import (Database, Required, Optional, PrimaryKey, Set)
 
 db = Database()
 
+class TgGroup(db.Entity):
+    _table_ = 'tg_group'
+    id = PrimaryKey(str)
+    name = Optional(str)
+    topics = Set(lambda: TgTopic, reverse='group')
+    admins = Set(lambda: TgUser, reverse='group')
 
-class Manager(db.Entity):
-    admin_id = Required(str, unique=True)
-    group_id = Required(str, unique=True)
+class TgTopic(db.Entity):
+    _table_ = 'tg_topic'
+    id = PrimaryKey(int)
+    group = Required(TgGroup, reverse='topics')
+    name = Required(str)
+    user = Optional(lambda: TgUser, reverse='topic')
+
+class TgUser(db.Entity):
+    _table_ = 'tg_user'
+    id = PrimaryKey(str)
+    topic = Required(TgTopic, reverse='user')
+    group = Optional(TgGroup, reverse='admins')
+    messages = Set(lambda: Message, reverse='sender')
 
 
-class Users(db.Entity):
-    tg_id = Required(str, unique=True)
-    topic_id = Required(int, unique=True)
-    name_user = Optional(str)
-    bio_user = Optional(str)
-
-
-class Ids(db.Entity):
-    tg_id = Required(str, unique=True)
-    topic_id = Required(int, unique=True)
+class Message(db.Entity):
+    _table_ = 'tg_message'
+    sender = Optional(TgUser)
     user_msg_id = Required(int)
     topic_msg_id = Required(int)
-
-
 
 
 db.bind(provider='sqlite', filename='chat_bot.sqlite', create_db=True)
