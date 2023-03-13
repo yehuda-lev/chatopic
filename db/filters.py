@@ -41,9 +41,9 @@ def get_tg_id(topic_id: int):
 
 @db_session
 def create_user(tg_id: int, group_id: int, topic_id: int, name: Optional[str]) -> TgUser:
-    group = TgGroup[group_id]
-    topic = TgTopic(id=str(topic_id), group=group, name=name)
-    return TgUser(id=str(tg_id), topic=topic)
+    group = TgGroup(id=str(group_id))
+    topic = TgTopic(id=topic_id, group=group, name=name)
+    return TgUser(id=str(tg_id), topic=topic, group=group)
 
 @db_session
 def get_topic_msg_id_from_user_msg_id(tg_id: int, msg_id: int):
