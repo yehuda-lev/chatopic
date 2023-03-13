@@ -1,7 +1,7 @@
 from typing import Optional
 
 from pony.orm import db_session, select
-from db.tables import Users, Ids, TgGroup, TgTopic, TgUser
+from db.tables import TgGroup, TgTopic, TgUser
 
 
 # @db_session
@@ -11,20 +11,20 @@ from db.tables import Users, Ids, TgGroup, TgTopic, TgUser
 
 @db_session
 def get_user_from_tg_id(tg_id: int):
-    return Users.get(tg_id=str(tg_id))
+    return TgUser.get(tg_id=str(tg_id))
 
 
 @db_session
 def get_user_from_topic(topic_id: int):
-    return Users.get(topic_id=topic_id)
+    return TgUser.get(topic_id=topic_id)
 
 @db_session
 def is_tg_id_exists(tg_id: int) -> bool:
-    return Users.exists(tg_id=str(tg_id))
+    return TgUser.exists(tg_id=str(tg_id))
 
 @db_session
 def is_topic_id_exists(topic_id: int) -> bool:
-    return Users.exists(topic_id=topic_id)
+    return TgUser.exists(topic_id=topic_id)
 
 
 def get_topic_id(tg_id: int):
