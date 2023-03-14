@@ -28,7 +28,7 @@ class TgTopic(db.Entity):
 class TgUser(db.Entity):
     _table_ = 'tg_user'
     id = PrimaryKey(str)
-    topic = Required(TgTopic, reverse='user')
+    topic = Optional(TgTopic, reverse='user')
     group = Optional(TgGroup, reverse='admins')
     messages = Set(lambda: Message, reverse='tg_id')
 
@@ -47,8 +47,8 @@ class TgUser(db.Entity):
 #     topic_msg_id = Required(int)
 class Message(db.Entity):
     _table_ = 'tg_message'
-    tg_id = Optional(TgUser)
-    topic_id = Optional(TgTopic)
+    tg_id = Required(TgUser)
+    topic_id = Required(TgTopic)
     user_msg_id = Required(int)
     topic_msg_id = Required(int)
 
