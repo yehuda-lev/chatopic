@@ -20,10 +20,10 @@ def is_tg_id_exists(tg_id: int) -> bool:
 
 @db_session
 def is_topic_id_exists(topic_id: int) -> bool:
-    return TgUser.exists(topic=topic_id)
+    return TgTopic.exists(id=topic_id)
 
 @db_session
-def create_user(tg_id: int, group_id: int, topic_id: int, name: Optional[str]) -> TgUser:
+def create_user(tg_id: int, group_id: int, topic_id: int, name: Optional[str]):
     if not is_group_exists(group_id=group_id):
         TgGroup(id=str(group_id))
     topic = TgTopic(id=topic_id, group=str(group_id), name=name)
