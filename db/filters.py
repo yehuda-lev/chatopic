@@ -36,15 +36,17 @@ def get_user_by_tg_id(tg_id: int):
 
 
 def get_group_by_tg_id(tg_id: int):
-    if get_user_by_tg_id(tg_id=tg_id) is None:
+    user = get_user_by_tg_id(tg_id=tg_id)
+    if user is None:
         return None
-    return get_user_by_tg_id(tg_id=tg_id).group.id
+    return user.group.id
 
 
 def get_topic_id_by_tg_id(tg_id: int):
-    if get_user_by_tg_id(tg_id=tg_id) is None:
+    user = get_user_by_tg_id(tg_id=tg_id)
+    if user is None:
         return None
-    return get_user_by_tg_id(tg_id=tg_id).topic.id
+    return user.topic.id
 
 
 @db_session
@@ -53,25 +55,40 @@ def get_user_by_topic(topic_id: int):
 
 
 def get_tg_id_by_topic(topic_id: int):
-    if get_user_by_topic(topic_id=topic_id) is None:
+    user = get_user_by_topic(topic_id=topic_id)
+    if user is None:
         return None
-    return get_user_by_topic(topic_id=topic_id).id
+    return user.id
 
 
 @db_session
-def create_message(sender: int, user_msg_id: int, topic_msg_id: int):
-    user = get_user_by_tg_id(tg_id=sender)
-    return Message(sender=user, user_msg_id=user_msg_id, topic_msg_id=topic_msg_id)
-
-@db_session
-def get_user_from_user_msg_id(sender: int, msg_id: int):
-    return Message.get(sender=str(sender), user_msg_id=msg_id)
-
-@db_session
-def get_topic_msg_id_from_user_msg_id(tg_id: int, msg_id: int):
-    return get_user_from_user_msg_id(sender=tg_id, msg_id=msg_id).topic_msg_id
+def create_message(tg_id_or_topic_id: int, is_topic_id: bool, user_msg_id: int, topic_msg_id: int):
+    if is_topic_id:
+        topic_id, tg_id = tg_id_or_topic_id, get_user_by_topic(topic_id=tg_id_or_topic_id)
+    else:
+        tg_id, topic_id = tg_id_or_topic_id, get_topic_id_by_tg_id(tg_id=tg_id_or_topic_id)
+    return Message(tg_id=str(tg_id) ,topic_id=topic_id, user_msg_id=user_msg_id, topic_msg_id=topic_msg_id)
 
 
 @db_session
-def get_tg_id_msg_id_from_topic_msg_id(topic_id: int, msg_id: int):
-    return get_user_from_user_msg_id(sender=topic_id, msg_id=msg_id)
+def get_user_by_user_msg_id(tg_id: int, msg_id: int):
+    return Message.get(tg_id=str(tg_id), user_msg_id=msg_id)
+
+@db_session
+def get_topic_msg_id_by_user_msg_id(tg_id: int, msg_id: int):
+    user = get_user_by_user_msg_id(tg_id=tg_id, msg_id=msg_id)
+    if user is None:
+        return None
+    return user.topic_msg_id
+
+
+@db_session
+def get_user_by_topic_msg_id(topic_id: int, msg_id: int):
+    return Message.get(topic_id=topic_id, topic_msg_id=msg_id)
+
+
+def get_user_msg_id_by_topic_msg_id(topic_id: int, msg_id: int):
+    user = get_user_by_topic_msg_id(topic_id=topic_id, msg_id=msg_id)
+    if user is None:
+        return None
+    return user.tg_id
