@@ -33,6 +33,9 @@ def create_user(tg_id: int, group_id: int, topic_id: int, name: Optional[str]):
     topic = TgTopic(id=topic_id, group=str(group_id), name=name)
     return TgUser(id=str(tg_id), topic=topic, group=str(group_id))
 
+@db_session
+def get_my_group() -> TgGroup.id:
+    return select(i.id for i in TgGroup)[:]
 
 @db_session
 def get_user_by_tg_id(tg_id: int):
