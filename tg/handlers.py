@@ -3,11 +3,11 @@ from pyrogram.raw import functions
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 
 from db import filters
-from db.filters import is_tg_id_exists
+from db.filters import is_tg_id_exists, get_group_by_tg_id
 
 
 async def create_topic(cli: Client, msg: Message):
-    name = msg.from_user.first_name + (" " + msg.from_user.last_name if msg.from_user.last_name else "")
+    name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
     peer = await cli.resolve_peer(msg.chat.id)
     from pyrogram.raw.types import InputChannel
     create = await cli.invoke(functions.channels.CreateForumTopic(
@@ -23,12 +23,10 @@ async def create_topic(cli: Client, msg: Message):
 
 
 async def is_user_exists(c: Client, msg: Message):
-    name = msg.from_user.first_name + (" " + msg.from_user.last_name if msg.from_user.last_name else "")
+    name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
     tg_id = msg.from_user.id
     print(filters.is_tg_id_exists(tg_id=tg_id))
-    if filters.is_tg_id_exists(tg_id=tg_id):
-        return
-    else:
+    if not filters.is_tg_id_exists(tg_id=tg_id):
         create = await create_topic(cli=c, msg=msg)
         group_id = int("-100" + str(create.peer_id.channel_id))
         topic_id = create.id
