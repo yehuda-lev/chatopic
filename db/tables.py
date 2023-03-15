@@ -22,7 +22,7 @@ class TgTopic(db.Entity):
 class TgUser(db.Entity):
     _table_ = 'tg_user'
     id = PrimaryKey(str)
-    topic = Optional(TgTopic, reverse='user')
+    topic = Required(TgTopic, reverse='user')
     group = Optional(TgGroup, reverse='admins')
     messages = Set(lambda: Message, reverse='tg_id')
 
