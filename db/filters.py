@@ -71,7 +71,7 @@ def get_tg_id_by_topic(topic_id: int):
 @db_session
 def create_message(tg_id_or_topic_id: int, is_topic_id: bool, user_msg_id: int, topic_msg_id: int):
     if is_topic_id:
-        topic_id, tg_id = tg_id_or_topic_id, get_user_by_topic(topic_id=tg_id_or_topic_id)
+        topic_id, tg_id = tg_id_or_topic_id, get_tg_id_by_topic(topic_id=tg_id_or_topic_id)
     else:
         tg_id, topic_id = tg_id_or_topic_id, get_topic_id_by_tg_id(tg_id=tg_id_or_topic_id)
     return Message(tg_id=str(tg_id) ,topic_id=topic_id, user_msg_id=user_msg_id, topic_msg_id=topic_msg_id)
