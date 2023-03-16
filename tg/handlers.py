@@ -10,6 +10,7 @@ from db.filters import is_tg_id_exists, get_group_by_tg_id, get_topic_id_by_tg_i
 
 async def create_topic(cli: Client, msg: Message):
     name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
+    username = username if (username:= msg.from_user.username) else "None"
     try:
         peer = await cli.resolve_peer(-1001558142106)
         create = await cli.invoke(functions.channels.CreateForumTopic(
@@ -21,9 +22,14 @@ async def create_topic(cli: Client, msg: Message):
             send_as=None
             )
         )
+        await cli.send_message(chat_id=int("-100" + str(create.updates[1].message.peer_id.channel_id)),
+                               text=f"**Name:** [{name}](tg://user?id={msg.from_user.id})" \
+                                                        + f"\n**Username:** @{username}",
+                               reply_to_message_id=create.updates[1].message.id)
         return create.updates[1].message
     except Exception as e:
-        print(e)
+        print("create_topic", e)
+        return
 
 async def is_user_exists(c: Client, msg: Message):
     name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
