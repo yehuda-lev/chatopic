@@ -50,22 +50,24 @@ async def forward_message_from_user(cli: Client, msg: Message):
         create_message(tg_id_or_topic_id=tg_id, is_topic_id=False,
                        user_msg_id=msg.id, topic_msg_id=forward.id)
     except BadRequest as e:
-        print("forward_message_from_user", e.value)
+        print("forward_message_from_user", e)
         return
 
 
 async def forward_message_from_topic(cli: Client, msg: Message):
     topic_id = msg.reply_to_top_message_id if msg.reply_to_top_message_id else msg.reply_to_message_id
-    if not msg.reply_to_top_message_id or msg.reply_to_message_id:
+    if not (msg.reply_to_top_message_id or msg.reply_to_message_id):
         return
     if not is_topic_id_exists(topic_id=topic_id):
         return
     tg_id = get_tg_id_by_topic(topic_id=topic_id)
-    forward = await msg.copy(chat_id=tg_id)
-    print(forward.id, msg.id)
-    print(type(forward.id), type(msg.id))
-    create_message(tg_id_or_topic_id=topic_id, is_topic_id=True,
-                   user_msg_id=forward.id, topic_msg_id=msg.id)
+    try:
+        forward = await msg.copy(chat_id=tg_id)
+        create_message(tg_id_or_topic_id=topic_id, is_topic_id=True,
+                       user_msg_id=forward.id, topic_msg_id=msg.id)
+    except BadRequest as e:
+        print("forward_message_from_topic", e)
+        return
 
 
 async def forward_message(cli: Client, msg: Message):
