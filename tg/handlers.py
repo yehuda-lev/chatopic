@@ -76,13 +76,3 @@ async def forward_message(cli: Client, msg: Message):
         await forward_message_from_topic(cli=cli, msg=msg)
     else:
         print("other")
-
-
-async def forward_message(cli: Client, msg: Message):
-    tg_id = msg.from_user.id
-    if msg.chat.id == tg_id:
-        await forward_message_from_user(cli=cli, msg=msg)
-    elif msg.chat.id == int(get_my_group()[0]):
-        await forward_message_from_topic(cli=cli, msg=msg)
-    else:
-        print("other")
