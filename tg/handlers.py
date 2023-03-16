@@ -1,8 +1,8 @@
 from pyrogram import Client
+from pyrogram.errors import BadRequest
 from pyrogram.raw import functions
 from pyrogram.raw.types import InputChannel
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
-
 from db import filters
 from db.filters import is_tg_id_exists, get_group_by_tg_id, get_topic_id_by_tg_id, get_my_group, create_message, \
     is_topic_id_exists, get_tg_id_by_topic
@@ -31,6 +31,7 @@ async def create_topic(cli: Client, msg: Message):
         print("create_topic", e)
         return
 
+
 async def is_user_exists(c: Client, msg: Message):
     name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
     tg_id = msg.from_user.id
@@ -39,40 +40,50 @@ async def is_user_exists(c: Client, msg: Message):
         return
     else:
         create = await create_topic(cli=c, msg=msg)
-        group_id = int("-100" + str(create.peer_id.channel_id))
-        topic_id = create.id
-        print(f"create topic; group: {group_id}, chat_id: {msg.chat.id}, topic: {topic_id}, tg_id: {tg_id}")
+        group_id, topic_id = int("-100" + str(create.peer_id.channel_id)), create.id
         filters.create_user(tg_id=tg_id, group_id=group_id, topic_id=topic_id, name=name)
 
 
-async def forward_message(cli: Client, msg: Message):
-    print(get_my_group()[0])
-    print(msg.chat.id)
+async def forward_message_from_user(cli: Client, msg: Message):
     tg_id = msg.from_user.id
-    if msg.chat.id == tg_id:
-        print("user")
-        await is_user_exists(c=cli, msg=msg)
-        topic_id = get_topic_id_by_tg_id(tg_id=tg_id)
-        group = get_group_by_tg_id(tg_id=tg_id)
-        print("group_id:", group, "topic_id:", topic_id)
-        # try:
+    await is_user_exists(c=cli, msg=msg)
+    topic_id = get_topic_id_by_tg_id(tg_id=tg_id)
+    group = get_group_by_tg_id(tg_id=tg_id)
+    try:
         forward = await msg.copy(chat_id=int(group), reply_to_message_id=topic_id)
-        print(forward.id, "vs", msg.id)
         create_message(tg_id_or_topic_id=tg_id, is_topic_id=False,
                        user_msg_id=msg.id, topic_msg_id=forward.id)
-        # except Exception as e:
-        #     print(e)
-    elif msg.chat.id == int(get_my_group()[0]):
-        print("group")
-        topic_id = msg.reply_to_top_message_id if msg.reply_to_top_message_id else msg.reply_to_message_id
-        if not msg.reply_to_top_message_id or msg.reply_to_message_id:
-            return
-        if not is_topic_id_exists(topic_id=topic_id):
-            return
-        tg_id = get_tg_id_by_topic(topic_id=topic_id)
+    except BadRequest as e:
+        print("forward_message_from_user", e.value)
+        return
+    except Exception as e:
+        print("forward_message_from_user:", e)
+        return
+
+
+async def forward_message_from_topic(cli: Client, msg: Message):
+    topic_id = msg.reply_to_top_message_id if msg.reply_to_top_message_id else msg.reply_to_message_id
+    if not msg.reply_to_top_message_id or msg.reply_to_message_id:
+        return
+    if not is_topic_id_exists(topic_id=topic_id):
+        return
+    tg_id = get_tg_id_by_topic(topic_id=topic_id)
+    try:
         forward = await msg.copy(chat_id=tg_id)
         print(forward.id, msg.id)
         print(type(forward.id), type(msg.id))
-        create_message(tg_id_or_topic_id=topic_id, is_topic_id=True, user_msg_id=forward.id, topic_msg_id=msg.id)
+        create_message(tg_id_or_topic_id=topic_id, is_topic_id=True,
+                       user_msg_id=forward.id, topic_msg_id=msg.id)
+    except Exception as e:
+        print(e)
+        return
+
+
+async def forward_message(cli: Client, msg: Message):
+    tg_id = msg.from_user.id
+    if msg.chat.id == tg_id:
+        await forward_message_from_user(cli=cli, msg=msg)
+    elif msg.chat.id == int(get_my_group()[0]):
+        await forward_message_from_topic(cli=cli, msg=msg)
     else:
         print("other")
