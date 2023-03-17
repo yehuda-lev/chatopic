@@ -105,3 +105,21 @@ async def forward_message(cli: Client, msg: Message):
         await forward_message_from_topic(cli=cli, msg=msg)
     else:
         print("other")
+
+
+async def edit_message_by_user(cli: Client, msg: Message):
+    tg_id = msg.from_user.id
+    msg_id = msg.id
+    if not is_tg_id_exists(tg_id=tg_id):
+        return
+    chat_id = get_group_by_tg_id(tg_id=tg_id)
+    msg_topic_id = get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg_id)
+    if msg.text:
+        await cli.edit_message_text(chat_id=chat_id, message_id=msg_topic_id,
+                                    text=msg.text)
+
+
+async def edited_message(cli: Client, msg: Message):
+    tg_id = msg.from_user.id
+    if msg.chat.id == tg_id:
+        await edit_message_by_user(cli=cli, msg=msg)
