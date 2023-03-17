@@ -98,4 +98,4 @@ def get_user_msg_id_by_topic_msg_id(topic_id: int, msg_id: int):
     user = get_user_by_topic_msg_id(topic_id=topic_id, msg_id=msg_id)
     if user is None:
         return None
-    return user.tg_id
+    return user.user_msg_id
