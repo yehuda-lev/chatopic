@@ -98,6 +98,8 @@ async def forward_message_from_topic(cli: Client, msg: Message):
 
 
 async def forward_message(cli: Client, msg: Message):
+    if msg.service or msg.game:
+        return
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
         await forward_message_from_user(cli=cli, msg=msg)
