@@ -2,7 +2,8 @@ from pyrogram import Client, filters, types
 from pyrogram.errors import BadRequest
 from pyrogram.raw import functions
 from pyrogram.raw.functions.channels import create_forum_topic
-from pyrogram.types import InlineKeyboardButton, KeyboardButton, Message
+from pyrogram.types import InlineKeyboardButton, KeyboardButton, Message, InputMedia, InputMediaPhoto, InputMediaVideo, \
+    InputMediaDocument, InputMediaAudio, InputMediaAnimation
 from db import filters
 
 import pyrogram.raw
@@ -111,6 +112,10 @@ async def forward_message_from_topic(cli: Client, msg: Message):
 
 @bot.on_message()
 async def forward_message(cli: Client, msg: Message):
+    print(msg)
+    if msg.service or msg.game:
+        print("service")
+        return
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
         await forward_message_from_user(cli=cli, msg=msg)
@@ -120,25 +125,58 @@ async def forward_message(cli: Client, msg: Message):
         print("other")
 
 
+async def edit_message(cli: Client, msg: Message, chat_id, msg_id):
+    if msg.text:
+        await cli.edit_message_text(chat_id=chat_id, message_id=msg_id,text=msg.text)
+        return
+    caption = text if (text := msg.caption) else None
+    if msg.photo:
+        media = InputMediaPhoto(media=msg.photo.file_id, caption=caption)
+    elif msg.video:
+        media = InputMediaVideo(media=msg.video.file_id, caption=caption)
+    elif msg.document:
+        media = InputMediaDocument(media=msg.document.file_id, caption=caption)
+    elif msg.audio:
+        media = InputMediaAudio(media=msg.audio.file_id, caption=caption)
+    elif msg.animation:
+        media = InputMediaAnimation(media=msg.animation.file_id)
+    else:
+        print(msg)
+        return
+    await cli.edit_message_media(chat_id=chat_id, message_id=msg_id, media=media)
+
+
 async def edit_message_by_user(cli: Client, msg: Message):
     tg_id = msg.from_user.id
-    msg_id = msg.id
     if not is_tg_id_exists(tg_id=tg_id):
         return
     chat_id = get_group_by_tg_id(tg_id=tg_id)
-    msg_topic_id = get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg_id)
-    if msg.text:
-        await cli.edit_message_text(chat_id=chat_id, message_id=msg_topic_id,
-                                    text=msg.text)
+    msg_id = get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg.id)
+    await edit_message(cli, msg, chat_id, msg_id)
 
 
+async def edit_message_by_topic(cli: Client, msg: Message):
+    if not (msg.reply_to_top_message_id or msg.reply_to_message_id):
+        return
+    topic_id = topic if(topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
+    if not is_topic_id_exists(topic_id=topic_id):
+        return
+    chat_id = get_tg_id_by_topic(topic_id=topic_id)
+    msg_id = get_user_msg_id_by_topic_msg_id(topic_id, msg_id=msg.id)
+    await edit_message(cli, msg, chat_id, msg_id)
+
+
+@bot.on_edited_message()
 async def edited_message(cli: Client, msg: Message):
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
         await edit_message_by_user(cli=cli, msg=msg)
-
-    # print(msg.reply(text="blaa"))
-    # print(cli.edit_message_text(chat_id=5679878442, message_id=876, text="bla"))
+    elif msg.chat.id == -1001558142106:
+        await edit_message_by_topic(cli, msg)
+    else:
+        print("not edited")
+        print(msg)
+        return
 
 
 sg_id = 687
