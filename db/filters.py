@@ -30,6 +30,7 @@ def create_user(tg_id: int, group_id: int, topic_id: int, name: Optional[str]):
         return
     if is_topic_id_exists(topic_id=topic_id):
         return
+    tg_group = TgGroup[str(group_id)]
     topic = TgTopic(id=topic_id, group=str(group_id), name=name)
     return TgUser(id=str(tg_id), topic=topic, group=str(group_id))
 
