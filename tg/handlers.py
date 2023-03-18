@@ -2,7 +2,8 @@ from pyrogram import Client
 from pyrogram.errors import BadRequest
 from pyrogram.raw import functions
 from pyrogram.raw.types import InputChannel
-from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, InputMediaVideo, \
+    InputMediaDocument, InputMediaAudio, InputMediaAnimation
 from db import filters
 from db.filters import is_tg_id_exists, get_group_by_tg_id, get_topic_id_by_tg_id, get_my_group, create_message, \
     is_topic_id_exists, get_tg_id_by_topic, get_topic_msg_id_by_user_msg_id, get_user_msg_id_by_topic_msg_id
@@ -107,6 +108,26 @@ async def forward_message(cli: Client, msg: Message):
         await forward_message_from_topic(cli=cli, msg=msg)
     else:
         print("other")
+
+
+async def edit_message(cli: Client, msg: Message, chat_id, msg_id):
+    if msg.text:
+        await cli.edit_message_text(chat_id=chat_id, message_id=msg_id,text=msg.text)
+        return
+    caption = text if (text := msg.caption) else None
+    if msg.photo:
+        media = InputMediaPhoto(media=msg.photo.file_id, caption=caption)
+    elif msg.video:
+        media = InputMediaVideo(media=msg.video.file_id, caption=caption)
+    elif msg.document:
+        media = InputMediaDocument(media=msg.document.file_id, caption=caption)
+    elif msg.audio:
+        media = InputMediaAudio(media=msg.audio.file_id, caption=caption)
+    elif msg.animation:
+        media = InputMediaAnimation(media=msg.animation.file_id)
+    else:
+        return
+    await cli.edit_message_media(chat_id=chat_id, message_id=msg_id, media=media)
 
 
 async def edit_message_by_user(cli: Client, msg: Message):
