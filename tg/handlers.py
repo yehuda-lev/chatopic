@@ -132,17 +132,31 @@ async def edit_message(cli: Client, msg: Message, chat_id, msg_id):
 
 async def edit_message_by_user(cli: Client, msg: Message):
     tg_id = msg.from_user.id
-    msg_id = msg.id
     if not is_tg_id_exists(tg_id=tg_id):
         return
     chat_id = get_group_by_tg_id(tg_id=tg_id)
-    msg_topic_id = get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg_id)
-    if msg.text:
-        await cli.edit_message_text(chat_id=chat_id, message_id=msg_topic_id,
-                                    text=msg.text)
+    msg_id = get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg.id)
+    await edit_message(cli, msg, chat_id, msg_id)
+
+
+async def edit_message_by_topic(cli: Client, msg: Message):
+    if not (msg.reply_to_top_message_id or msg.reply_to_message_id):
+        return
+    topic_id = topic if(topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
+    if not is_topic_id_exists(topic_id=topic_id):
+        return
+    chat_id = get_tg_id_by_topic(topic_id=topic_id)
+    msg_id = get_user_msg_id_by_topic_msg_id(topic_id, msg_id=msg.id)
+    await edit_message(cli, msg, chat_id, msg_id)
 
 
 async def edited_message(cli: Client, msg: Message):
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
         await edit_message_by_user(cli=cli, msg=msg)
+    elif msg.chat.id == -1001558142106:
+        await edit_message_by_topic(cli, msg)
+    else:
+        print("not edited")
+        print(msg)
+        return
