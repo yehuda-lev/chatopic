@@ -11,7 +11,7 @@ from db.filters import is_tg_id_exists, get_group_by_tg_id, get_topic_id_by_tg_i
 
 async def create_topic(cli: Client, msg: Message):
     name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
-    username = username if (username:= msg.from_user.username) else "None"
+    username = "@" + str(username) if (username:= msg.from_user.username) else "אין"
     peer = await cli.resolve_peer(-1001558142106)
     create = await cli.invoke(functions.channels.CreateForumTopic(
         channel=InputChannel(channel_id=peer.channel_id, access_hash=peer.access_hash),
@@ -22,12 +22,19 @@ async def create_topic(cli: Client, msg: Message):
         send_as=None
         )
     )
-    await cli.send_message(chat_id=int("-100" + str(create.updates[1].message.peer_id.channel_id)),
-                           text=f"**INFO THE USER**\n"
-                                f"**Name:** [{name}](tg://user?id={msg.from_user.id})" \
-                                f"\n**Username:** @{username}\n"
-                                f"**ID:** `{msg.from_user.id}`",
-                           reply_to_message_id=create.updates[1].message.id)
+    text = f"**פרטים על המשתמש**\n"\
+    f"**שם:** [{name}](tg://user?id={msg.from_user.id})" \
+    f"\n**שם משתמש:** {username}\n"\
+    f"‏**ID:**`{msg.from_user.id}`"
+    photo = photo if (photo:= msg.from_user.photo) else None
+    chat_id = int("-100" + str(create.updates[1].message.peer_id.channel_id))
+    if photo is None:
+        await cli.send_message(chat_id=chat_id, text=text,
+                               reply_to_message_id=create.updates[1].message.id)
+    else:
+        async for photo in cli.get_chat_photos(msg.from_user.id, limit=1):
+            await cli.send_photo(chat_id=chat_id, photo=photo.file_id,
+                             caption=text, reply_to_message_id=create.updates[1].message.id)
     return create.updates[1].message
 
 async def is_user_exists(c: Client, msg: Message):
