@@ -50,10 +50,10 @@ async def is_user_exists(c: Client, msg: Message):
 
 def is_topic(msg: Message):
     if not (msg.reply_to_top_message_id or msg.reply_to_message_id):
-        return
+        return False
     topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
     if not is_topic_id_exists(topic_id=topic_id):
-        return
+        return False
     return topic_id
 
 
@@ -99,7 +99,8 @@ async def forward_message_from_user(cli: Client, msg: Message):
 
 async def forward_message_from_topic(cli: Client, msg: Message):
     topic_id = is_topic(msg)
-    print(topic_id)
+    if topic_id is False:
+        return
     tg_id = get_tg_id_by_topic(topic_id=topic_id)
     reply = get_reply_to_message_by_topic(msg=msg)
     try:
@@ -156,6 +157,8 @@ async def edit_message_by_user(cli: Client, msg: Message):
 
 async def edit_message_by_topic(cli: Client, msg: Message):
     topic_id = is_topic(msg)
+    if topic_id is False:
+        return
     chat_id = get_tg_id_by_topic(topic_id=topic_id)
     msg_id = get_user_msg_id_by_topic_msg_id(topic_id, msg_id=msg.id)
     await edit_message(cli, msg, chat_id, msg_id)
