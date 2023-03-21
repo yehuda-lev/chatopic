@@ -56,6 +56,13 @@ def get_topic_id_by_tg_id(tg_id: int):
         return None
     return user.topic.id
 
+def get_is_protect(tg_id: int):
+    return get_user_by_tg_id(tg_id=tg_id).protect
+
+@db_session
+def change_protect(tg_id: int, is_protect: bool):
+    user = TgUser.get(id=str(tg_id))
+    user.protect = is_protect
 
 @db_session
 def get_user_by_topic(topic_id: int):
