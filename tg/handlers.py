@@ -1,13 +1,14 @@
 from pyrogram import Client
 from pyrogram.errors import BadRequest
 from pyrogram.raw import functions
+from pyrogram.raw.functions.channels import EditForumTopic
 from pyrogram.raw.types import InputChannel
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, InputMediaVideo, \
     InputMediaDocument, InputMediaAudio, InputMediaAnimation
 from db import filters
 from db.filters import is_tg_id_exists, get_group_by_tg_id, get_topic_id_by_tg_id, get_my_group, create_message, \
     is_topic_id_exists, get_tg_id_by_topic, get_topic_msg_id_by_user_msg_id, get_user_msg_id_by_topic_msg_id, \
-    get_is_protect, change_protect
+    get_is_protect, change_protect, change_banned, get_is_banned
 
 
 async def create_topic(cli: Client, msg: Message):
@@ -57,6 +58,9 @@ def is_topic(msg: Message):
         return False
     return topic_id
 
+def is_banned(tg_id: int):
+    return get_is_banned(tg_id=tg_id)
+
 
 def protect(c: Client, msg: Message):
     topic_id = is_topic(msg)
@@ -70,6 +74,29 @@ def protect(c: Client, msg: Message):
     change_protect(tg_id=tg_id, is_protect=is_protect)
     msg.reply("Done")
 
+
+def ban_users(c: Client, msg: Message):
+    topic_id = is_topic(msg)
+    if topic_id is False:
+        return
+    tg_id = get_tg_id_by_topic(topic_id=topic_id)
+    try:
+        if msg.command[0] == "ban":
+            change_banned(tg_id=tg_id, is_banned=True)
+            msg.reply("banned \nYou can unban him by sending the /unban command")
+            closed = True
+        else:
+            change_banned(tg_id=tg_id, is_banned=False)
+            msg.reply("unbanned \nYou can block it again by sending the /ban command")
+            closed = False
+        peer = c.resolve_peer(msg.chat.id)
+        c.invoke(EditForumTopic(
+            channel=InputChannel(channel_id=peer.channel_id, access_hash=peer.access_hash),
+            topic_id=topic_id, closed=closed
+            )
+        )
+    except BadRequest as e:
+        print(e)
 
 
 def get_reply_to_message_by_user(msg: Message):
@@ -101,6 +128,8 @@ def get_reply_to_message_by_topic(msg: Message):
 async def forward_message_from_user(cli: Client, msg: Message):
     tg_id = msg.from_user.id
     await is_user_exists(c=cli, msg=msg)
+    if is_banned(tg_id=tg_id):
+        return
     group = get_group_by_tg_id(tg_id=tg_id)
     reply = get_reply_to_message_by_user(msg=msg)
     try:
@@ -118,7 +147,9 @@ async def forward_message_from_topic(cli: Client, msg: Message):
         return
     print(topic_id)
     tg_id = get_tg_id_by_topic(topic_id=topic_id)
-    tg_id = get_tg_id_by_topic(topic_id=topic_id)
+    if is_banned(tg_id):
+        await msg.reply("the user is ban\nYou can unban him by sending the /unban command")
+        return
     is_protect = get_is_protect(tg_id=tg_id)
     reply = get_reply_to_message_by_topic(msg=msg)
     try:
@@ -168,6 +199,8 @@ async def edit_message_by_user(cli: Client, msg: Message):
     tg_id = msg.from_user.id
     if not is_tg_id_exists(tg_id=tg_id):
         return
+    if is_banned(tg_id):
+        return
     chat_id = get_group_by_tg_id(tg_id=tg_id)
     msg_id = get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg.id)
     await edit_message(cli, msg, chat_id, msg_id)
@@ -178,6 +211,9 @@ async def edit_message_by_topic(cli: Client, msg: Message):
     if topic_id is False:
         return
     chat_id = get_tg_id_by_topic(topic_id=topic_id)
+    if is_banned(tg_id=chat_id):
+        await msg.reply("the user is ban\nYou can unban him by sending the /unban command")
+        return
     msg_id = get_user_msg_id_by_topic_msg_id(topic_id, msg_id=msg.id)
     await edit_message(cli, msg, chat_id, msg_id)
 
