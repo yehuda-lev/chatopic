@@ -6,7 +6,8 @@ from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, 
     InputMediaDocument, InputMediaAudio, InputMediaAnimation
 from db import filters
 from db.filters import is_tg_id_exists, get_group_by_tg_id, get_topic_id_by_tg_id, get_my_group, create_message, \
-    is_topic_id_exists, get_tg_id_by_topic, get_topic_msg_id_by_user_msg_id, get_user_msg_id_by_topic_msg_id
+    is_topic_id_exists, get_tg_id_by_topic, get_topic_msg_id_by_user_msg_id, get_user_msg_id_by_topic_msg_id, \
+    get_is_protect, change_protect
 
 
 async def create_topic(cli: Client, msg: Message):
@@ -57,6 +58,20 @@ def is_topic(msg: Message):
     return topic_id
 
 
+def protect(c: Client, msg: Message):
+    topic_id = is_topic(msg)
+    if topic_id is False:
+        return
+    tg_id = get_tg_id_by_topic(topic_id=topic_id)
+    if msg.command[0] == "protect":
+        is_protect = True
+    else:
+        is_protect = False
+    change_protect(tg_id=tg_id, is_protect=is_protect)
+    msg.reply("Done")
+
+
+
 def get_reply_to_message_by_user(msg: Message):
     tg_id = msg.from_user.id
     if msg.reply_to_message:
@@ -101,10 +116,13 @@ async def forward_message_from_topic(cli: Client, msg: Message):
     topic_id = is_topic(msg)
     if topic_id is False:
         return
+    print(topic_id)
     tg_id = get_tg_id_by_topic(topic_id=topic_id)
+    tg_id = get_tg_id_by_topic(topic_id=topic_id)
+    is_protect = get_is_protect(tg_id=tg_id)
     reply = get_reply_to_message_by_topic(msg=msg)
     try:
-        forward = await msg.copy(chat_id=tg_id, reply_to_message_id=reply)
+        forward = await msg.copy(chat_id=tg_id, reply_to_message_id=reply, protect_content=is_protect)
         create_message(tg_id_or_topic_id=topic_id, is_topic_id=True,
                        user_msg_id=forward.id, topic_msg_id=msg.id)
     except BadRequest as e:
