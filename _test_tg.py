@@ -1,21 +1,24 @@
-from pyrogram import Client, filters, types
+import os
+
+from pyrogram import (Client, types, filters)
 from pyrogram.errors import BadRequest
 from pyrogram.raw import functions
 from pyrogram.raw.functions.channels import create_forum_topic
 from pyrogram.types import InlineKeyboardButton, KeyboardButton, Message, InputMedia, InputMediaPhoto, InputMediaVideo, \
-    InputMediaDocument, InputMediaAudio, InputMediaAnimation
+    InputMediaDocument, InputMediaAudio, InputMediaAnimation, Update
 from db import filters
 
 import pyrogram.raw
 from pyrogram.raw.types import (KeyboardButtonRequestPeer, RequestPeerTypeUser, ReplyKeyboardMarkup,
                                 KeyboardButtonRow, UpdateNewMessage, RequestPeerTypeChat, RequestPeerTypeBroadcast,
                                 ChatAdminRights, UpdateChannelUserTyping, UpdateChatParticipantAdd,
-                                UpdateNewChannelMessage, InputChannel, Channel)
+                                UpdateNewChannelMessage, InputChannel, Channel, MessageActionTopicEdit)
 from pyrogram.raw.functions.messages import SendMessage
 from pyrogram.raw.base import ChatAdminRights as Base_ChatAdminRights, KeyboardButton, InputPeer
 
 from db.filters import is_tg_id_exists, get_topic_id_by_tg_id, get_group_by_tg_id, get_my_group, create_message, \
-    get_tg_id_by_topic, is_topic_id_exists, get_topic_msg_id_by_user_msg_id, get_user_msg_id_by_topic_msg_id
+    get_tg_id_by_topic, is_topic_id_exists, get_topic_msg_id_by_user_msg_id, get_user_msg_id_by_topic_msg_id, \
+    get_is_protect, change_protect
 
 # import pyrogram.raw.functions.channels.create_forum_topic
 bot = Client("my_bot")
@@ -23,7 +26,7 @@ bot = Client("my_bot")
 
 async def create_topic(cli: Client, msg: Message):
     name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
-    username = username if (username:= msg.from_user.username) else "None"
+    username = "@" + str(username) if (username:= msg.from_user.username) else "אין"
     peer = await cli.resolve_peer(-1001558142106)
     create = await cli.invoke(functions.channels.CreateForumTopic(
         channel=InputChannel(channel_id=peer.channel_id, access_hash=peer.access_hash),
@@ -34,12 +37,19 @@ async def create_topic(cli: Client, msg: Message):
         send_as=None
         )
     )
-    await cli.send_message(chat_id=int("-100" + str(create.updates[1].message.peer_id.channel_id)),
-                           text=f"**INFO THE USER**\n"
-                                f"**Name:** [{name}](tg://user?id={msg.from_user.id})" \
-                                f"\n**Username:** @{username}\n"
-                                f"**ID:** `{msg.from_user.id}`",
-                           reply_to_message_id=create.updates[1].message.id)
+    text = f"**פרטים על המשתמש**\n"\
+    f"**שם:** [{name}](tg://user?id={msg.from_user.id})" \
+    f"\n**שם משתמש:** {username}\n"\
+    f"‏**ID:**`{msg.from_user.id}`"
+    photo = photo if (photo:= msg.from_user.photo) else None
+    chat_id = int("-100" + str(create.updates[1].message.peer_id.channel_id))
+    if photo is None:
+        await cli.send_message(chat_id=chat_id, text=text,
+                               reply_to_message_id=create.updates[1].message.id)
+    else:
+        async for photo in cli.get_chat_photos(msg.from_user.id, limit=1):
+            await cli.send_photo(chat_id=chat_id, photo=photo.file_id,
+                             caption=text, reply_to_message_id=create.updates[1].message.id)
     return create.updates[1].message
 
 async def is_user_exists(c: Client, msg: Message):
@@ -51,6 +61,29 @@ async def is_user_exists(c: Client, msg: Message):
         create = await create_topic(cli=c, msg=msg)
         group_id, topic_id = int("-100" + str(create.peer_id.channel_id)), create.id
         filters.create_user(tg_id=tg_id, group_id=group_id, topic_id=topic_id, name=name)
+
+
+def is_topic(msg: Message):
+    if not (msg.reply_to_top_message_id or msg.reply_to_message_id):
+        return False
+    topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
+    if not is_topic_id_exists(topic_id=topic_id):
+        return False
+    return topic_id
+
+
+def protect(c: Client, msg: Message):
+    topic_id = is_topic(msg)
+    if topic_id is False:
+        return
+    tg_id = get_tg_id_by_topic(topic_id=topic_id)
+    if msg.command[0] == "protect":
+        is_protect = True
+    else:
+        is_protect = False
+    change_protect(tg_id=tg_id, is_protect=is_protect)
+    msg.reply("Done")
+
 
 
 def get_reply_to_message_by_user(msg: Message):
@@ -67,7 +100,7 @@ def get_reply_to_message_by_user(msg: Message):
 
 
 def get_reply_to_message_by_topic(msg: Message):
-    topic_id = topic if(topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
+    topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
     if msg.reply_to_message:
         is_reply = get_user_msg_id_by_topic_msg_id(topic_id=topic_id, msg_id=msg.reply_to_message.id)
         if is_reply is not None:
@@ -94,15 +127,16 @@ async def forward_message_from_user(cli: Client, msg: Message):
 
 
 async def forward_message_from_topic(cli: Client, msg: Message):
-    if not (msg.reply_to_top_message_id or msg.reply_to_message_id):
+    topic_id = is_topic(msg)
+    if topic_id is False:
         return
-    topic_id = topic if(topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
-    if not is_topic_id_exists(topic_id=topic_id):
-        return
+    print(topic_id)
     tg_id = get_tg_id_by_topic(topic_id=topic_id)
+    tg_id = get_tg_id_by_topic(topic_id=topic_id)
+    is_protect = get_is_protect(tg_id=tg_id)
     reply = get_reply_to_message_by_topic(msg=msg)
     try:
-        forward = await msg.copy(chat_id=tg_id, reply_to_message_id=reply)
+        forward = await msg.copy(chat_id=tg_id, reply_to_message_id=reply, protect_content=is_protect)
         create_message(tg_id_or_topic_id=topic_id, is_topic_id=True,
                        user_msg_id=forward.id, topic_msg_id=msg.id)
     except BadRequest as e:
@@ -110,9 +144,7 @@ async def forward_message_from_topic(cli: Client, msg: Message):
         return
 
 
-@bot.on_message()
 async def forward_message(cli: Client, msg: Message):
-    print(msg)
     if msg.service or msg.game:
         print("service")
         return
@@ -156,17 +188,14 @@ async def edit_message_by_user(cli: Client, msg: Message):
 
 
 async def edit_message_by_topic(cli: Client, msg: Message):
-    if not (msg.reply_to_top_message_id or msg.reply_to_message_id):
-        return
-    topic_id = topic if(topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
-    if not is_topic_id_exists(topic_id=topic_id):
+    topic_id = is_topic(msg)
+    if topic_id is False:
         return
     chat_id = get_tg_id_by_topic(topic_id=topic_id)
     msg_id = get_user_msg_id_by_topic_msg_id(topic_id, msg_id=msg.id)
     await edit_message(cli, msg, chat_id, msg_id)
 
 
-@bot.on_edited_message()
 async def edited_message(cli: Client, msg: Message):
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
@@ -179,51 +208,64 @@ async def edited_message(cli: Client, msg: Message):
         return
 
 
-sg_id = 687
-g_id = 5679878442
+
+# @bot.on_message()
+async def add_group(c: Client, msg: Message):
+    print(msg)
+    peer = await bot.resolve_peer(msg.chat.id)
+    await bot.invoke(
+        SendMessage(peer=peer, message="test", random_id=bot.rnd_id(),
+                    reply_markup=ReplyKeyboardMarkup(rows=[
+                        KeyboardButtonRow(
+                            buttons=[
+                                KeyboardButtonRequestPeer(text='Group',
+                                                          button_id=3,
+                                                          peer_type=RequestPeerTypeChat(
+                                                              forum=True, bot_participant=True,
+                                                              bot_admin_rights=pyrogram.raw.types.ChatAdminRights(
+                                                                  post_messages=True,
+                                                                  change_info=False,
+                                                                  delete_messages=True,
+                                                                  ban_users=False,
+                                                                  invite_users=False,
+                                                                  pin_messages=False,
+                                                                  add_admins=False,
+                                                                  anonymous=False,
+                                                                  manage_call=False,
+                                                                  other=False,
+                                                                  manage_topics=True
+                                                          )))
+                            ]
+                        )
+
+                    ],resize=False))
+    )
 
 
 
 
 
-# def is_exists(c: Client, msg: Message):
-#     num = 0
-#     for i in get_config().default_users_id:
-#         if i == msg.chat.id:
-#             num += 1
-#     if num == 0:
-#         msg.reply("אינך מורשה!")
-#         c.block_user(msg.from_user.id)
-#         return
-#     text = ""
-#     try:
-#         if msg.text:
-#             text = msg.text
-#         elif msg.caption:
-#             text = msg.caption
-#         elif msg.video:
-#             if msg.video.file_name:
-#                 text = msg.video.file_name
-#             else:
-#                 text = msg.video.file_id
-#         elif msg.document:
-#             if msg.document.file_name:
-#                 text = msg.document.file_name
-#             else:
-#                 text = msg.document.file_id
-#         elif msg.audio:
-#             if msg.audio.file_name:
-#                 text = msg.audio.file_name
-#             else:
-#                 text = msg.audio.file_id
-#         elif msg.photo:
-#             text = msg.photo.file_id
-#         if is_exists_db(msg=text):
-#             c.delete_messages(chat_id=msg.chat.id, message_ids=msg.id)
-#         else:
-#             add_msg_db(msg=text, msg_id=msg.id)
-#     except Exception as e:
-#         c.send_message(chat_id="yehudalev", text=f"{e}")
+
+
+
+def is_service(_, __, msg: UpdateNewMessage):
+    if msg.message.action.closed:
+        return True
+    return False
+
+# @bot.on_raw_update()
+def update(c: Client, msg: UpdateNewMessage, users, chats):
+    print(msg)
+    try:
+        if msg.message.action.peer.channel_id:
+            print(msg.message.action.peer.channel_id)
+    except AttributeError:
+        return
+
+
+# @bot.on_message()
+def topic(c: Client, msg: Message):
+    print(msg)
 
 
 
