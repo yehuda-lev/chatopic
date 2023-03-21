@@ -48,6 +48,15 @@ async def is_user_exists(c: Client, msg: Message):
         filters.create_user(tg_id=tg_id, group_id=group_id, topic_id=topic_id, name=name)
 
 
+def is_topic(msg: Message):
+    if not (msg.reply_to_top_message_id or msg.reply_to_message_id):
+        return
+    topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
+    if not is_topic_id_exists(topic_id=topic_id):
+        return
+    return topic_id
+
+
 def get_reply_to_message_by_user(msg: Message):
     tg_id = msg.from_user.id
     if msg.reply_to_message:
@@ -62,7 +71,7 @@ def get_reply_to_message_by_user(msg: Message):
 
 
 def get_reply_to_message_by_topic(msg: Message):
-    topic_id = topic if(topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
+    topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
     if msg.reply_to_message:
         is_reply = get_user_msg_id_by_topic_msg_id(topic_id=topic_id, msg_id=msg.reply_to_message.id)
         if is_reply is not None:
@@ -89,11 +98,8 @@ async def forward_message_from_user(cli: Client, msg: Message):
 
 
 async def forward_message_from_topic(cli: Client, msg: Message):
-    if not (msg.reply_to_top_message_id or msg.reply_to_message_id):
-        return
-    topic_id = topic if(topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
-    if not is_topic_id_exists(topic_id=topic_id):
-        return
+    topic_id = is_topic(msg)
+    print(topic_id)
     tg_id = get_tg_id_by_topic(topic_id=topic_id)
     reply = get_reply_to_message_by_topic(msg=msg)
     try:
@@ -107,6 +113,7 @@ async def forward_message_from_topic(cli: Client, msg: Message):
 
 async def forward_message(cli: Client, msg: Message):
     if msg.service or msg.game:
+        print("service")
         return
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
@@ -133,6 +140,7 @@ async def edit_message(cli: Client, msg: Message, chat_id, msg_id):
     elif msg.animation:
         media = InputMediaAnimation(media=msg.animation.file_id)
     else:
+        print(msg)
         return
     await cli.edit_message_media(chat_id=chat_id, message_id=msg_id, media=media)
 
@@ -147,11 +155,7 @@ async def edit_message_by_user(cli: Client, msg: Message):
 
 
 async def edit_message_by_topic(cli: Client, msg: Message):
-    if not (msg.reply_to_top_message_id or msg.reply_to_message_id):
-        return
-    topic_id = topic if(topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
-    if not is_topic_id_exists(topic_id=topic_id):
-        return
+    topic_id = is_topic(msg)
     chat_id = get_tg_id_by_topic(topic_id=topic_id)
     msg_id = get_user_msg_id_by_topic_msg_id(topic_id, msg_id=msg.id)
     await edit_message(cli, msg, chat_id, msg_id)
