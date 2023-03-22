@@ -211,6 +211,8 @@ async def edit_message_by_user(cli: Client, msg: Message):
         return
     chat_id = get_group_by_tg_id(tg_id=tg_id)
     msg_id = get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg.id)
+    if msg_id is None:
+        return
     await edit_message(cli, msg, chat_id, msg_id)
 
 
@@ -223,6 +225,8 @@ async def edit_message_by_topic(cli: Client, msg: Message):
         await msg.reply("the user is ban\nYou can unban him by sending the /unban command")
         return
     msg_id = get_user_msg_id_by_topic_msg_id(topic_id, msg_id=msg.id)
+    if msg_id is None:
+        return
     await edit_message(cli, msg, chat_id, msg_id)
 
 
