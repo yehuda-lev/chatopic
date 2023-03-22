@@ -32,7 +32,8 @@ async def create_topic(cli: Client, msg: Message):
     text = f"**פרטים על המשתמש**\n"\
     f"**שם:** [{name}](tg://user?id={msg.from_user.id})" \
     f"\n**שם משתמש:** {username}\n"\
-    f"‏**ID:**`{msg.from_user.id}`"
+    f"‏**ID:** `{msg.from_user.id}`\n\n"\
+    f"לקבלת מידע על הפקודות הנתמכות בצאט אנא שלח את הפקודה /info"
     photo = photo if (photo:= msg.from_user.photo) else None
     chat_id = int("-100" + str(create.updates[1].message.peer_id.channel_id))
     if photo is None:
@@ -66,6 +67,14 @@ def is_topic(msg: Message):
 def is_banned(tg_id: int):
     return get_is_banned(tg_id=tg_id)
 
+@bot.on_message(pyrogram.filters.command("info") & pyrogram.filters.group)
+def get_info_command(c: Client, msg: Message):
+    ban = "בשביל לחסום משתמש עליך לשלוח את הפקודה /ban"
+    unban = "בשביל לשחרר את החסימה עליך לשלוח את הפקודה /unban"
+    protect = "בשביל שהמשתמש לא יוכל להעתיק את ההודעות מעתה ואילך עליך לשלוח את הפקודה /protect"
+    unprotect = "בשביל שהמשתמש יוכל לחזור להעתיק הודעות עליך לשלוח את הפקודה /unprotect"
+    msg.reply(text=f"{ban}\n{unban}\n{protect}\n{unprotect}")
+    return
 
 @bot.on_message(pyrogram.filters.command(["protect", "unprotect"]) & pyrogram.filters.group)
 def protect(c: Client, msg: Message):
