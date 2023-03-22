@@ -3,14 +3,16 @@ from pyrogram import Client
 from pyrogram.errors import BadRequest
 from pyrogram.raw import functions
 from pyrogram.raw.functions.channels import EditForumTopic
-from pyrogram.raw.types import InputChannel
+from pyrogram.raw.functions.messages import SendMessage
+from pyrogram.raw.types import InputChannel, ReplyKeyboardMarkup, KeyboardButtonRow, KeyboardButtonRequestPeer, \
+    RequestPeerTypeChat, ChatAdminRights
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, InputMediaVideo, \
     InputMediaDocument, InputMediaAudio, InputMediaAnimation
 from db import filters
 from db.filters import is_tg_id_exists, get_group_by_tg_id, get_topic_id_by_tg_id, get_my_group, create_message, \
     is_topic_id_exists, get_tg_id_by_topic, get_topic_msg_id_by_user_msg_id, get_user_msg_id_by_topic_msg_id, \
     get_is_protect, change_protect, change_banned, get_is_banned
-from tg.filters import is_have_a_group, is_not_raw
+from tg.filters import is_have_a_group, is_not_raw, is_admin
 
 bot = Client("my_bot")
 
@@ -235,3 +237,34 @@ async def edited_message(cli: Client, msg: Message):
         print("not edited")
         print(msg)
         return
+
+
+@bot.on_message(pyrogram.filters.command("add_group") & pyrogram.filters.create(is_admin))
+async def request_group(c: Client, msg: Message):
+    peer = await bot.resolve_peer(msg.chat.id)
+    await bot.invoke(
+        SendMessage(peer=peer, message="אנא לחץ על הכפתור למטה כדי להוסיף את הבוט לקבוצה עם נושאים",
+                    random_id=bot.rnd_id(),
+                    reply_markup=ReplyKeyboardMarkup(rows=[
+                        KeyboardButtonRow(
+                            buttons=[
+                                KeyboardButtonRequestPeer(
+                                    text='הוסף אותי לקבוצה עם נושאים', button_id=1,
+                                    peer_type=RequestPeerTypeChat(
+                                        forum=True, bot_participant=True,
+                                        user_admin_rights=ChatAdminRights(
+                                            add_admins=True, delete_messages=True,
+                                            manage_topics=True, change_info=True
+                                            ),
+                                        bot_admin_rights=ChatAdminRights(
+                                            change_info=True,
+                                            delete_messages=True,
+                                            manage_topics=True,
+                                            )
+                                    )
+                                )
+                            ]
+                        )
+                    ], resize=True))
+    )
+
