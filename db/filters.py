@@ -7,7 +7,13 @@ from db.tables import TgGroup, TgTopic, TgUser, Message, Admin
 # @db_session
 # def show_all_user(tg_id: int): # del
 #     return select(i for i in Users if i.tg_id == tg_id).show()
-
+@db_session
+def check_if_have_a_group() -> bool:
+    group = select(i for i in TgGroup)
+    print(group)
+    if group:
+        return True
+    return False
 
 @db_session
 def is_group_exists(group_id: int) -> bool:
@@ -28,6 +34,10 @@ def is_topic_id_exists(topic_id: int) -> bool:
 @db_session
 def create_admin(tg_id: int):
     return Admin(id=str(tg_id))
+
+@db_session
+def create_group(group_id: int):
+    return TgGroup(id=str(group_id))
 
 @db_session
 def create_user(tg_id: int, group_id: int, topic_id: int, name: Optional[str]):
