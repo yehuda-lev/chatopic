@@ -1,7 +1,7 @@
 from typing import Optional
 
 from pony.orm import db_session, select
-from db.tables import TgGroup, TgTopic, TgUser, Message
+from db.tables import TgGroup, TgTopic, TgUser, Message, Admin
 
 
 # @db_session
@@ -13,6 +13,9 @@ from db.tables import TgGroup, TgTopic, TgUser, Message
 def is_group_exists(group_id: int) -> bool:
     return TgGroup.exists(id=str(group_id))
 
+@db_session
+def is_admin_exists(tg_id: int) -> bool:
+    return Admin.exists(id=str(tg_id))
 
 @db_session
 def is_tg_id_exists(tg_id: int) -> bool:
@@ -21,6 +24,10 @@ def is_tg_id_exists(tg_id: int) -> bool:
 @db_session
 def is_topic_id_exists(topic_id: int) -> bool:
     return TgTopic.exists(id=topic_id)
+
+@db_session
+def create_admin(tg_id: int):
+    return Admin(id=str(tg_id))
 
 @db_session
 def create_user(tg_id: int, group_id: int, topic_id: int, name: Optional[str]):
