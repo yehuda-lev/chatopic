@@ -274,9 +274,11 @@ async def request_group(c: Client, msg: Message):
 
 @bot.on_raw_update()
 async def create_group(client, update: UpdateNewMessage, users, chats):
-    print(update)
     if check_if_have_a_group():
         return
+    if not update.message:
+        return
+    print(update)
     tg_id = update.message.peer_id.user_id
     try:
         if is_admin_exists(tg_id=tg_id):
