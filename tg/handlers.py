@@ -5,13 +5,13 @@ from pyrogram.raw import functions
 from pyrogram.raw.functions.channels import EditForumTopic
 from pyrogram.raw.functions.messages import SendMessage
 from pyrogram.raw.types import InputChannel, ReplyKeyboardMarkup, KeyboardButtonRow, KeyboardButtonRequestPeer, \
-    RequestPeerTypeChat, ChatAdminRights
+    RequestPeerTypeChat, ChatAdminRights, UpdateNewMessage
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, InputMediaVideo, \
     InputMediaDocument, InputMediaAudio, InputMediaAnimation
 from db import filters
 from db.filters import is_tg_id_exists, get_group_by_tg_id, get_topic_id_by_tg_id, get_my_group, create_message, \
     is_topic_id_exists, get_tg_id_by_topic, get_topic_msg_id_by_user_msg_id, get_user_msg_id_by_topic_msg_id, \
-    get_is_protect, change_protect, change_banned, get_is_banned
+    get_is_protect, change_protect, change_banned, get_is_banned, is_admin_exists, check_if_have_a_group
 from tg.filters import is_have_a_group, is_not_raw, is_admin
 
 bot = Client("my_bot")
@@ -268,3 +268,24 @@ async def request_group(c: Client, msg: Message):
                     ], resize=True))
     )
 
+@bot.on_raw_update()
+async def create_group(client, update: UpdateNewMessage, users, chats):
+    print(update)
+    tg_id = update.message.peer_id.user_id
+    try:
+        if is_admin_exists(tg_id=tg_id):
+            if not check_if_have_a_group():
+                first_group_id = update.message.action.peer.channel_id
+                group_id = int(f"-100{first_group_id}")
+                info = await bot.get_chat(chat_id=group_id)
+                print(info)
+                group_name = info.title
+                filters.create_group(group_id=group_id, name=group_name)
+                text = f"הקבוצה [{group_name}](t.me/c/{first_group_id}) נוספה בהצלחה"
+                await bot.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
+                                       text=text, reply_markup=pyrogram.types.ReplyKeyboardRemove(selective=True))
+
+    except AttributeError:
+        await bot.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
+                               text="הבוט בתחזוקה אנא חזור שנית בהמשך היום")
+        return
