@@ -1,3 +1,4 @@
+import pyrogram
 from pyrogram import Client
 from pyrogram.errors import BadRequest
 from pyrogram.raw import functions
@@ -9,7 +10,9 @@ from db import filters
 from db.filters import is_tg_id_exists, get_group_by_tg_id, get_topic_id_by_tg_id, get_my_group, create_message, \
     is_topic_id_exists, get_tg_id_by_topic, get_topic_msg_id_by_user_msg_id, get_user_msg_id_by_topic_msg_id, \
     get_is_protect, change_protect, change_banned, get_is_banned
+from tg.filters import is_have_a_group, is_not_raw
 
+bot = Client("my_bot")
 
 async def create_topic(cli: Client, msg: Message):
     name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
@@ -62,6 +65,7 @@ def is_banned(tg_id: int):
     return get_is_banned(tg_id=tg_id)
 
 
+@bot.on_message(pyrogram.filters.command(["protect", "unprotect"]) & pyrogram.filters.group)
 def protect(c: Client, msg: Message):
     topic_id = is_topic(msg)
     if topic_id is False:
@@ -75,6 +79,7 @@ def protect(c: Client, msg: Message):
     msg.reply("Done")
 
 
+@bot.on_message(pyrogram.filters.command(["ban", "unban"]) & pyrogram.filters.group)
 def ban_users(c: Client, msg: Message):
     topic_id = is_topic(msg)
     if topic_id is False:
@@ -161,6 +166,7 @@ async def forward_message_from_topic(cli: Client, msg: Message):
         return
 
 
+@bot.on_message(pyrogram.filters.create(is_not_raw) & pyrogram.filters.create(is_have_a_group))
 async def forward_message(cli: Client, msg: Message):
     if msg.service or msg.game:
         print("service")
@@ -218,6 +224,7 @@ async def edit_message_by_topic(cli: Client, msg: Message):
     await edit_message(cli, msg, chat_id, msg_id)
 
 
+@bot.on_edited_message(pyrogram.filters.create(is_have_a_group))
 async def edited_message(cli: Client, msg: Message):
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
