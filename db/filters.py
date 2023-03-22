@@ -10,7 +10,6 @@ from db.tables import TgGroup, TgTopic, TgUser, Message, Admin
 @db_session
 def check_if_have_a_group() -> bool:
     group = select(i for i in TgGroup)
-    print(group)
     if group:
         return True
     return False
@@ -36,8 +35,8 @@ def create_admin(tg_id: int):
     return Admin(id=str(tg_id))
 
 @db_session
-def create_group(group_id: int):
-    return TgGroup(id=str(group_id))
+def create_group(group_id: int, name: str):
+    return TgGroup(id=str(group_id), name=name)
 
 @db_session
 def create_user(tg_id: int, group_id: int, topic_id: int, name: Optional[str]):
