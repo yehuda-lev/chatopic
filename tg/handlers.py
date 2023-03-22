@@ -275,19 +275,20 @@ async def request_group(c: Client, msg: Message):
 @bot.on_raw_update()
 async def create_group(client, update: UpdateNewMessage, users, chats):
     print(update)
+    if check_if_have_a_group():
+        return
     tg_id = update.message.peer_id.user_id
     try:
         if is_admin_exists(tg_id=tg_id):
-            if not check_if_have_a_group():
-                first_group_id = update.message.action.peer.channel_id
-                group_id = int(f"-100{first_group_id}")
-                info = await bot.get_chat(chat_id=group_id)
-                print(info)
-                group_name = info.title
-                filters.create_group(group_id=group_id, name=group_name)
-                text = f"הקבוצה [{group_name}](t.me/c/{first_group_id}) נוספה בהצלחה"
-                await bot.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
-                                       text=text, reply_markup=pyrogram.types.ReplyKeyboardRemove(selective=True))
+            first_group_id = update.message.action.peer.channel_id
+            group_id = int(f"-100{first_group_id}")
+            info = await bot.get_chat(chat_id=group_id)
+            print(info)
+            group_name = info.title
+            filters.create_group(group_id=group_id, name=group_name)
+            text = f"הקבוצה [{group_name}](t.me/c/{first_group_id}) נוספה בהצלחה"
+            await bot.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
+                                   text=text, reply_markup=pyrogram.types.ReplyKeyboardRemove(selective=True))
 
     except AttributeError:
         await bot.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
