@@ -18,7 +18,8 @@ from pyrogram.raw.base import ChatAdminRights as Base_ChatAdminRights, KeyboardB
 
 from db.filters import is_tg_id_exists, get_topic_id_by_tg_id, get_group_by_tg_id, get_my_group, create_message, \
     get_tg_id_by_topic, is_topic_id_exists, get_topic_msg_id_by_user_msg_id, get_user_msg_id_by_topic_msg_id, \
-    get_is_protect, change_protect, change_banned, get_is_banned
+    get_is_protect, change_protect, change_banned, get_is_banned, create_group, is_admin_exists, check_if_have_a_group
+from tg.filters import is_admin, is_not_raw, is_have_a_group
 
 # import pyrogram.raw.functions.channels.create_forum_topic
 bot = Client("my_bot")
@@ -75,6 +76,7 @@ def is_banned(tg_id: int):
     return get_is_banned(tg_id=tg_id)
 
 
+@bot.on_message(pyrogram.filters.command(["protect", "unprotect"]) & pyrogram.filters.group)
 def protect(c: Client, msg: Message):
     topic_id = is_topic(msg)
     if topic_id is False:
@@ -88,6 +90,7 @@ def protect(c: Client, msg: Message):
     msg.reply("Done")
 
 
+@bot.on_message(pyrogram.filters.command(["ban", "unban"]) & pyrogram.filters.group)
 def ban_users(c: Client, msg: Message):
     topic_id = is_topic(msg)
     if topic_id is False:
@@ -174,6 +177,7 @@ async def forward_message_from_topic(cli: Client, msg: Message):
         return
 
 
+@bot.on_message(pyrogram.filters.create(is_not_raw) & pyrogram.filters.create(is_have_a_group))
 async def forward_message(cli: Client, msg: Message):
     if msg.service or msg.game:
         print("service")
@@ -231,7 +235,7 @@ async def edit_message_by_topic(cli: Client, msg: Message):
     await edit_message(cli, msg, chat_id, msg_id)
 
 
-@bot.on_edited_message()
+@bot.on_edited_message(pyrogram.filters.create(is_have_a_group))
 async def edited_message(cli: Client, msg: Message):
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
@@ -244,66 +248,56 @@ async def edited_message(cli: Client, msg: Message):
         return
 
 
-
-# @bot.on_message()
-async def add_group(c: Client, msg: Message):
-    print(msg)
+@bot.on_message(pyrogram.filters.command("add_group") & pyrogram.filters.create(is_admin))
+async def request_group(c: Client, msg: Message):
     peer = await bot.resolve_peer(msg.chat.id)
     await bot.invoke(
-        SendMessage(peer=peer, message="test", random_id=bot.rnd_id(),
+        SendMessage(peer=peer, message="אנא לחץ על הכפתור למטה כדי להוסיף את הבוט לקבוצה עם נושאים",
+                    random_id=bot.rnd_id(),
                     reply_markup=ReplyKeyboardMarkup(rows=[
                         KeyboardButtonRow(
                             buttons=[
-                                KeyboardButtonRequestPeer(text='Group',
-                                                          button_id=3,
-                                                          peer_type=RequestPeerTypeChat(
-                                                              forum=True, bot_participant=True,
-                                                              bot_admin_rights=pyrogram.raw.types.ChatAdminRights(
-                                                                  post_messages=True,
-                                                                  change_info=False,
-                                                                  delete_messages=True,
-                                                                  ban_users=False,
-                                                                  invite_users=False,
-                                                                  pin_messages=False,
-                                                                  add_admins=False,
-                                                                  anonymous=False,
-                                                                  manage_call=False,
-                                                                  other=False,
-                                                                  manage_topics=True
-                                                          )))
+                                KeyboardButtonRequestPeer(
+                                    text='הוסף אותי לקבוצה עם נושאים', button_id=1,
+                                    peer_type=RequestPeerTypeChat(
+                                        forum=True, bot_participant=True,
+                                        user_admin_rights=ChatAdminRights(
+                                            add_admins=True, delete_messages=True,
+                                            manage_topics=True, change_info=True
+                                            ),
+                                        bot_admin_rights=ChatAdminRights(
+                                            change_info=True,
+                                            delete_messages=True,
+                                            manage_topics=True,
+                                            )
+                                    )
+                                )
                             ]
                         )
-
-                    ],resize=False))
+                    ], resize=True))
     )
 
-
-
-
-
-
-
-
-def is_service(_, __, msg: UpdateNewMessage):
-    if msg.message.action.closed:
-        return True
-    return False
-
-# @bot.on_raw_update()
-def update(c: Client, msg: UpdateNewMessage, users, chats):
-    print(msg)
+@bot.on_raw_update()
+async def create_group(client, update: UpdateNewMessage, users, chats):
+    print(update)
+    tg_id = update.message.peer_id.user_id
     try:
-        if msg.message.action.peer.channel_id:
-            print(msg.message.action.peer.channel_id)
+        if is_admin_exists(tg_id=tg_id):
+            if not check_if_have_a_group():
+                first_group_id = update.message.action.peer.channel_id
+                group_id = int(f"-100{first_group_id}")
+                info = await bot.get_chat(chat_id=group_id)
+                print(info)
+                group_name = info.title
+                filters.create_group(group_id=group_id, name=group_name)
+                text = f"הקבוצה [{group_name}](t.me/c/{first_group_id}) נוספה בהצלחה"
+                await bot.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
+                                       text=text, reply_markup=pyrogram.types.ReplyKeyboardRemove(selective=True))
+
     except AttributeError:
+        await bot.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
+                               text="הבוט בתחזוקה אנא חזור שנית בהמשך היום")
         return
-
-
-# @bot.on_message()
-def topic(c: Client, msg: Message):
-    print(msg)
-
-
 
 
 bot.run()
