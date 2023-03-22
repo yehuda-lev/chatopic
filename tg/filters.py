@@ -12,10 +12,14 @@ def is_not_raw(_, __, msg: Message) -> bool:
 
 
 def is_admin(_, __, msg: Message) -> bool:
-    if is_admin_exists(tg_id=msg.from_user.id):
-        return True
-    return False
+    if not is_admin_exists(tg_id=msg.from_user.id):
+        msg.reply("אינך מנהל")
+        return False
+    return True
 
 
 def is_have_a_group(_, __, msg: Message):
-    return check_if_have_a_group()
+    if not check_if_have_a_group():
+        msg.reply("אין עדיין קבוצה, אני שלח את הפקודה /add_group")
+        return False
+    return True
