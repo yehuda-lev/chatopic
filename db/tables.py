@@ -2,6 +2,10 @@ from pony.orm import (Database, Required, Optional, PrimaryKey, Set)
 
 db = Database()
 
+class Admin(db.Entity):
+    _table_ = 'admin'
+    id = PrimaryKey(str)
+
 class TgGroup(db.Entity):
     _table_ = 'tg_group'
     id = PrimaryKey(str)
