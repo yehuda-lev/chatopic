@@ -52,7 +52,7 @@ def create_user(tg_id: int, group_id: int, topic_id: int, name: Optional[str]):
 
 @db_session
 def get_my_group() -> TgGroup.id:
-    return select(i.id for i in TgGroup)[:]
+    return select(i.id for i in TgGroup)[:][0]
 
 @db_session
 def get_user_by_tg_id(tg_id: int):
