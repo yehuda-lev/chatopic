@@ -25,17 +25,7 @@ def teeee(_, __, msg: types.Message) -> bool:
     return False
 
     # @bot.on_message(filters.text)
-async def start(c: Client, msg: types.Message):
-    # print("################\n\n\n\n\n\n\n#############")
-    # print(m)
-    if msg.reply_to_top_message_id:
-        print(f"id: {msg.id}, chat: {msg.chat.id} {msg.chat.type}, reply_top: {msg.reply_to_top_message_id}")
-    else:
-        print(f"id: {msg.id}, chat: {msg.chat.id} {msg.chat.type}, reply: {msg.reply_to_message_id}")
-    # test = await create_topic(cli=c, msg=msg)
-    # print(test)
-    name = msg.from_user.first_name + (" " + msg.from_user.last_name if msg.from_user.last_name else "")
-    print(name)
+# async def start(c: Client, msg: types.Message):
 
     # print("#######################\n", peer)
     # peer1 = m.chat.id

@@ -18,17 +18,18 @@ from pyrogram.raw.base import ChatAdminRights as Base_ChatAdminRights, KeyboardB
 
 from db.filters import is_tg_id_exists, get_topic_id_by_tg_id, get_group_by_tg_id, get_my_group, create_message, \
     get_tg_id_by_topic, is_topic_id_exists, get_topic_msg_id_by_user_msg_id, get_user_msg_id_by_topic_msg_id, \
-    get_is_protect, change_protect, change_banned, get_is_banned, create_group, is_admin_exists, check_if_have_a_group
+    get_is_protect, change_protect, change_banned, get_is_banned, create_group, is_admin_exists, check_if_have_a_group, \
+    is_group_exists
 from tg.filters import is_admin, is_not_raw, is_have_a_group
 
 # import pyrogram.raw.functions.channels.create_forum_topic
 bot = Client("my_bot")
-
+print(get_my_group())
 
 async def create_topic(cli: Client, msg: Message):
     name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
     username = "@" + str(username) if (username:= msg.from_user.username) else "אין"
-    peer = await cli.resolve_peer(-1001558142106)
+    peer = await cli.resolve_peer(int(get_my_group()))
     create = await cli.invoke(functions.channels.CreateForumTopic(
         channel=InputChannel(channel_id=peer.channel_id, access_hash=peer.access_hash),
         title=name,
@@ -41,7 +42,8 @@ async def create_topic(cli: Client, msg: Message):
     text = f"**פרטים על המשתמש**\n"\
     f"**שם:** [{name}](tg://user?id={msg.from_user.id})" \
     f"\n**שם משתמש:** {username}\n"\
-    f"‏**ID:**`{msg.from_user.id}`"
+    f"‏**ID:** `{msg.from_user.id}`\n\n"\
+    f"לקבלת מידע על הפקודות הנתמכות בצאט אנא שלח את הפקודה /info"
     photo = photo if (photo:= msg.from_user.photo) else None
     chat_id = int("-100" + str(create.updates[1].message.peer_id.channel_id))
     if photo is None:
@@ -75,6 +77,14 @@ def is_topic(msg: Message):
 def is_banned(tg_id: int):
     return get_is_banned(tg_id=tg_id)
 
+@bot.on_message(pyrogram.filters.command("info") & pyrogram.filters.group)
+def get_info_command(c: Client, msg: Message):
+    ban = "בשביל לחסום משתמש עליך לשלוח את הפקודה /ban"
+    unban = "בשביל לשחרר את החסימה עליך לשלוח את הפקודה /unban"
+    protect = "בשביל שהמשתמש לא יוכל להעתיק את ההודעות מעתה ואילך עליך לשלוח את הפקודה /protect"
+    unprotect = "בשביל שהמשתמש יוכל לחזור להעתיק הודעות עליך לשלוח את הפקודה /unprotect"
+    msg.reply(text=f"{ban}\n{unban}\n{protect}\n{unprotect}")
+    return
 
 @bot.on_message(pyrogram.filters.command(["protect", "unprotect"]) & pyrogram.filters.group)
 def protect(c: Client, msg: Message):
@@ -185,10 +195,11 @@ async def forward_message(cli: Client, msg: Message):
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
         await forward_message_from_user(cli=cli, msg=msg)
-    elif msg.chat.id == -1001558142106:
+    elif is_group_exists(group_id=msg.chat.id):
         await forward_message_from_topic(cli=cli, msg=msg)
     else:
         print("other")
+        return
 
 
 async def edit_message(cli: Client, msg: Message, chat_id, msg_id):
@@ -220,6 +231,8 @@ async def edit_message_by_user(cli: Client, msg: Message):
         return
     chat_id = get_group_by_tg_id(tg_id=tg_id)
     msg_id = get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg.id)
+    if msg_id is None:
+        return
     await edit_message(cli, msg, chat_id, msg_id)
 
 
@@ -232,6 +245,8 @@ async def edit_message_by_topic(cli: Client, msg: Message):
         await msg.reply("the user is ban\nYou can unban him by sending the /unban command")
         return
     msg_id = get_user_msg_id_by_topic_msg_id(topic_id, msg_id=msg.id)
+    if msg_id is None:
+        return
     await edit_message(cli, msg, chat_id, msg_id)
 
 
@@ -240,7 +255,7 @@ async def edited_message(cli: Client, msg: Message):
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
         await edit_message_by_user(cli=cli, msg=msg)
-    elif msg.chat.id == -1001558142106:
+    elif is_group_exists(group_id=msg.chat.id):
         await edit_message_by_topic(cli, msg)
     else:
         print("not edited")
@@ -279,20 +294,23 @@ async def request_group(c: Client, msg: Message):
 
 @bot.on_raw_update()
 async def create_group(client, update: UpdateNewMessage, users, chats):
+    if check_if_have_a_group():
+        return
+    if not update.message:
+        return
     print(update)
     tg_id = update.message.peer_id.user_id
     try:
         if is_admin_exists(tg_id=tg_id):
-            if not check_if_have_a_group():
-                first_group_id = update.message.action.peer.channel_id
-                group_id = int(f"-100{first_group_id}")
-                info = await bot.get_chat(chat_id=group_id)
-                print(info)
-                group_name = info.title
-                filters.create_group(group_id=group_id, name=group_name)
-                text = f"הקבוצה [{group_name}](t.me/c/{first_group_id}) נוספה בהצלחה"
-                await bot.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
-                                       text=text, reply_markup=pyrogram.types.ReplyKeyboardRemove(selective=True))
+            first_group_id = update.message.action.peer.channel_id
+            group_id = int(f"-100{first_group_id}")
+            info = await bot.get_chat(chat_id=group_id)
+            print(info)
+            group_name = info.title
+            filters.create_group(group_id=group_id, name=group_name)
+            text = f"הקבוצה [{group_name}](t.me/c/{first_group_id}) נוספה בהצלחה"
+            await bot.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
+                                   text=text, reply_markup=pyrogram.types.ReplyKeyboardRemove(selective=True))
 
     except AttributeError:
         await bot.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
