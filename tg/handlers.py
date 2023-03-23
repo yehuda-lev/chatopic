@@ -11,7 +11,8 @@ from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, 
 from db import filters
 from db.filters import is_tg_id_exists, get_group_by_tg_id, get_topic_id_by_tg_id, get_my_group, create_message, \
     is_topic_id_exists, get_tg_id_by_topic, get_topic_msg_id_by_user_msg_id, get_user_msg_id_by_topic_msg_id, \
-    get_is_protect, change_protect, change_banned, get_is_banned, is_admin_exists, check_if_have_a_group
+    get_is_protect, change_protect, change_banned, get_is_banned, is_admin_exists, check_if_have_a_group, \
+    is_group_exists
 from tg.filters import is_have_a_group, is_not_raw, is_admin
 
 bot = Client("my_bot")
@@ -19,7 +20,7 @@ bot = Client("my_bot")
 async def create_topic(cli: Client, msg: Message):
     name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
     username = "@" + str(username) if (username:= msg.from_user.username) else "אין"
-    peer = await cli.resolve_peer(-1001558142106)
+    peer = await cli.resolve_peer(int(get_my_group()))
     create = await cli.invoke(functions.channels.CreateForumTopic(
         channel=InputChannel(channel_id=peer.channel_id, access_hash=peer.access_hash),
         title=name,
@@ -185,10 +186,11 @@ async def forward_message(cli: Client, msg: Message):
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
         await forward_message_from_user(cli=cli, msg=msg)
-    elif msg.chat.id == -1001558142106:
+    elif is_group_exists(group_id=msg.chat.id):
         await forward_message_from_topic(cli=cli, msg=msg)
     else:
         print("other")
+        return
 
 
 async def edit_message(cli: Client, msg: Message, chat_id, msg_id):
@@ -244,11 +246,10 @@ async def edited_message(cli: Client, msg: Message):
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
         await edit_message_by_user(cli=cli, msg=msg)
-    elif msg.chat.id == -1001558142106:
+    elif is_group_exists(group_id=msg.chat.id):
         await edit_message_by_topic(cli, msg)
     else:
         print("not edited")
-        print(msg)
         return
 
 
