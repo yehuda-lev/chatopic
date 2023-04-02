@@ -8,14 +8,15 @@ from db import filters
 from db.filters import is_admin_exists, check_if_have_a_group
 
 async def is_user_exists(_, c: Client, msg: Message):
-    name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
     tg_id = msg.from_user.id
     if filters.is_tg_id_exists(tg_id=tg_id):
-        return
+        return True
     else:
+        name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
         create = await create_topic(cli=c, msg=msg)
         group_id, topic_id = int("-100" + str(create.peer_id.channel_id)), create.id
         filters.create_user(tg_id=tg_id, group_id=group_id, topic_id=topic_id, name=name)
+        return True
 
 
 async def create_topic(cli: Client, msg: Message):
