@@ -39,7 +39,7 @@ async def edit_message_by_user(cli: Client, msg: Message):
 
 
 async def edit_message_by_topic(cli: Client, msg: Message):
-    topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
+    topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
     chat_id = get_tg_id_by_topic(topic_id=topic_id)
     msg_id = get_user_msg_id_by_topic_msg_id(topic_id, msg_id=msg.id)
     if msg_id is None:
