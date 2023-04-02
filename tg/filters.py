@@ -48,6 +48,16 @@ async def create_topic(cli: Client, msg: Message):
                              caption=text, reply_to_message_id=create.updates[1].message.id)
     return create.updates[1].message
 
+
+def is_topic(_, __, msg: Message):
+    if not (msg.reply_to_top_message_id or msg.reply_to_message_id):
+        return False
+    topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
+    if not filters.is_topic_id_exists(topic_id=topic_id):
+        return False
+    return True
+
+
 def is_not_raw(_, __, msg: Message) -> bool:
     if msg.text or msg.game or msg.command or msg.photo or msg.document or msg.voice \
             or msg.service or msg.media or msg.audio or msg.video or msg.contact \
