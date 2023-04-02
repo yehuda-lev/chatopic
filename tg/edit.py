@@ -45,7 +45,7 @@ async def edit_message_by_topic(cli: Client, msg: types.Message):
     await edit_message(cli, msg, chat_id, msg_id)
 
 
-@bot.on_edited_message(pyrogram.filters.create(is_have_a_group))
+# @bot.on_edited_message(pyrogram.filters.create(is_have_a_group))
 async def edited_message(cli: Client, msg: types.Message):
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
