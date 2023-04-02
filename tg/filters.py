@@ -62,11 +62,14 @@ async def create_topic(cli: Client, msg: Message):
 
 
 def is_topic(_, __, msg: Message):
-    if not (msg.reply_to_top_message_id or msg.reply_to_message_id):
-        return False
-    topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
-    if not filters.is_topic_id_exists(topic_id=topic_id):
-        return False
+    tg_id = msg.from_user.id
+    if not msg.chat.id == tg_id:
+        if not (msg.reply_to_top_message_id or msg.reply_to_message_id):
+            return False
+        topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
+        if not filters.is_topic_id_exists(topic_id=topic_id):
+            return False
+        return True
     return True
 
 
