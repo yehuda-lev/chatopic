@@ -31,10 +31,6 @@ async def edit_message(cli: Client, msg: Message, chat_id, msg_id):
 
 async def edit_message_by_user(cli: Client, msg: Message):
     tg_id = msg.from_user.id
-    if not is_tg_id_exists(tg_id=tg_id):
-        return
-    if is_banned(tg_id):
-        return
     chat_id = get_group_by_tg_id(tg_id=tg_id)
     msg_id = get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg.id)
     if msg_id is None:
@@ -43,13 +39,8 @@ async def edit_message_by_user(cli: Client, msg: Message):
 
 
 async def edit_message_by_topic(cli: Client, msg: Message):
-    topic_id = is_topic(msg)
-    if topic_id is False:
-        return
+    topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
     chat_id = get_tg_id_by_topic(topic_id=topic_id)
-    if is_banned(tg_id=chat_id):
-        await msg.reply("the user is ban\nYou can unban him by sending the /unban command")
-        return
     msg_id = get_user_msg_id_by_topic_msg_id(topic_id, msg_id=msg.id)
     if msg_id is None:
         return
