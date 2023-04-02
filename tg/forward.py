@@ -26,7 +26,7 @@ def get_reply_to_message_by_user(msg: Message):
 
 
 def get_reply_to_message_by_topic(msg: Message):
-    topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
+    topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
     if msg.reply_to_message:
         is_reply = get_user_msg_id_by_topic_msg_id(topic_id=topic_id, msg_id=msg.reply_to_message.id)
         if is_reply is not None:
@@ -52,7 +52,7 @@ async def forward_message_from_user(cli: Client, msg: Message):
 
 
 async def forward_message_from_topic(cli: Client, msg: Message):
-    topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
+    topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
     tg_id = get_tg_id_by_topic(topic_id=topic_id)
     is_protect = get_is_protect(tg_id=tg_id)
     reply = get_reply_to_message_by_topic(msg=msg)
