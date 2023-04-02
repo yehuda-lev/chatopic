@@ -60,7 +60,7 @@ async def forward_message_from_topic(cli: Client, msg: Message):
         return
 
 
-@app.on_message(pyrogram.filters.create(is_not_raw) & pyrogram.filters.create(is_have_a_group))
+# @app.on_message(pyrogram.filters.create(is_not_raw) & pyrogram.filters.create(is_have_a_group))
 async def forward_message(cli: Client, msg: Message):
     if msg.service or msg.game:
         print("service")
