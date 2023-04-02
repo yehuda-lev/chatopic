@@ -1,0 +1,5 @@
+*.session*
+*.sqlite
+venv
+.idea
+pycache
