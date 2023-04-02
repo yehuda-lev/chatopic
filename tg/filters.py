@@ -9,12 +9,13 @@ from db import filters as db_filters
 def is_banned(_, __, msg: Message):
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
-        return db_filters.get_is_banned(tg_id=tg_id)
+        if db_filters.get_is_banned(tg_id=tg_id):
+            return False
     else:
         if db_filters.get_is_banned(tg_id=tg_id):
             msg.reply("the user is ban\nYou can unban him by sending the /unban command")
             return False
-        return True
+    return True
 
 
 async def is_user_exists(_, c: Client, msg: Message):
