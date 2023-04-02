@@ -1,14 +1,11 @@
 import pyrogram
-from pyrogram import Client, client
+from pyrogram import Client
 from pyrogram.errors import BadRequest
-from pyrogram.raw.functions.channels import EditForumTopic
-from pyrogram.raw.functions.messages import SendMessage
-from pyrogram.raw.types import InputChannel, ReplyKeyboardMarkup, KeyboardButtonRow, KeyboardButtonRequestPeer, \
-    RequestPeerTypeChat, ChatAdminRights, UpdateNewMessage
+from pyrogram.raw import functions
+from pyrogram.raw import types as raw_types
 from pyrogram.types import Message
 
-from db import filters
-from db.filters import get_tg_id_by_topic, change_protect, change_banned, check_if_have_a_group, is_admin_exists
+from db import filters as filters_db
 from tg.filters import is_admin
 
 
@@ -24,34 +21,34 @@ def get_info_command(c: Client, msg: Message):
 
 @app.on_message(pyrogram.filters.command(["protect", "unprotect"]) & pyrogram.filters.group)
 def protect(c: Client, msg: Message):
-    topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
-    tg_id = get_tg_id_by_topic(topic_id=topic_id)
+    topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
+    tg_id = filters_db.get_tg_id_by_topic(topic_id=topic_id)
     if msg.command[0] == "protect":
         is_protect = True
     else:
         is_protect = False
-    change_protect(tg_id=tg_id, is_protect=is_protect)
+    filters_db.change_protect(tg_id=tg_id, is_protect=is_protect)
     msg.reply("Done")
 
 
 @app.on_message(pyrogram.filters.command(["ban", "unban"]) & pyrogram.filters.group)
 def ban_users(c: Client, msg: Message):
-    topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
-    tg_id = get_tg_id_by_topic(topic_id=topic_id)
+    topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
+    tg_id = filters_db.get_tg_id_by_topic(topic_id=topic_id)
     try:
         if msg.command[0] == "ban":
-            change_banned(tg_id=tg_id, is_banned=True)
+            filters_db.change_banned(tg_id=tg_id, is_banned=True)
             msg.reply("banned \nYou can unban him by sending the /unban command")
             closed = True
         else:
-            change_banned(tg_id=tg_id, is_banned=False)
+            filters_db.change_banned(tg_id=tg_id, is_banned=False)
             msg.reply("unbanned \nYou can block it again by sending the /ban command")
             closed = False
         peer = c.resolve_peer(msg.chat.id)
-        c.invoke(EditForumTopic(
-            channel=InputChannel(channel_id=peer.channel_id, access_hash=peer.access_hash),
+        c.invoke(functions.channels.EditForumTopic(
+            channel=raw_types.InputChannel(channel_id=peer.channel_id, access_hash=peer.access_hash),
             topic_id=topic_id, closed=closed
-            )
+        )
         )
     except BadRequest as e:
         print(e)
@@ -61,25 +58,25 @@ def ban_users(c: Client, msg: Message):
 async def request_group(c: Client, msg: Message):
     peer = await c.resolve_peer(msg.chat.id)
     await c.invoke(
-        SendMessage(peer=peer, message="אנא לחץ על הכפתור למטה כדי להוסיף את הבוט לקבוצה עם נושאים",
-                    random_id=c.rnd_id(),
-                    reply_markup=reply_markup())
+        functions.messages.SendMessage(peer=peer, message="אנא לחץ על הכפתור למטה כדי להוסיף את הבוט לקבוצה עם נושאים",
+                                       random_id=c.rnd_id(),
+                                       reply_markup=reply_markup())
     )
 
 
 def reply_markup():
-    return ReplyKeyboardMarkup(rows=[
-        KeyboardButtonRow(
+    return raw_types.ReplyKeyboardMarkup(rows=[
+        raw_types.KeyboardButtonRow(
             buttons=[
-                KeyboardButtonRequestPeer(
+                raw_types.KeyboardButtonRequestPeer(
                     text='הוסף אותי לקבוצה עם נושאים', button_id=1,
-                    peer_type=RequestPeerTypeChat(
+                    peer_type=raw_types.RequestPeerTypeChat(
                         forum=True, bot_participant=True,
-                        user_admin_rights=ChatAdminRights(
+                        user_admin_rights=raw_types.ChatAdminRights(
                             add_admins=True, delete_messages=True,
                             manage_topics=True, change_info=True
                         ),
-                        bot_admin_rights=ChatAdminRights(
+                        bot_admin_rights=raw_types.ChatAdminRights(
                             change_info=True,
                             delete_messages=True,
                             manage_topics=True,
@@ -92,26 +89,26 @@ def reply_markup():
 
 
 @app.on_raw_update()
-async def create_group(c: Client, update: UpdateNewMessage, users, chats):
-    if check_if_have_a_group():
+async def create_group(c: Client, update: raw_types.UpdateNewMessage, users, chats):
+    if filters_db.check_if_have_a_group():
         return
     if not update.message:
         return
     print(update)
     tg_id = update.message.peer_id.user_id
     try:
-        if is_admin_exists(tg_id=tg_id):
+        if filters_db.is_admin_exists(tg_id=tg_id):
             first_group_id = update.message.action.peer.channel_id
             group_id = int(f"-100{first_group_id}")
             info = await c.get_chat(chat_id=group_id)
             print(info)
             group_name = info.title
-            filters.create_group(group_id=group_id, name=group_name)
+            filters_db.create_group(group_id=group_id, name=group_name)
             text = f"הקבוצה [{group_name}](t.me/c/{first_group_id}) נוספה בהצלחה"
-            await c.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
-                                   text=text, reply_markup=pyrogram.types.ReplyKeyboardRemove(selective=True))
+            await c.send_message(chat_id=tg_id, reply_to_message_id=update.message.id, text=text,
+                                 reply_markup=pyrogram.types.ReplyKeyboardRemove(selective=True))
 
     except AttributeError:
         await c.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
-                               text="הבוט בתחזוקה אנא חזור שנית בהמשך היום")
+                             text="הבוט בתחזוקה אנא חזור שנית בהמשך היום")
         return
