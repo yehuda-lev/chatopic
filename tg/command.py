@@ -9,6 +9,7 @@ from pyrogram.types import Message
 
 from db import filters
 from db.filters import get_tg_id_by_topic, change_protect, change_banned, check_if_have_a_group, is_admin_exists
+from tg.filters import is_admin
 
 
 @bot.on_message(pyrogram.filters.command("info") & pyrogram.filters.group)
@@ -22,9 +23,7 @@ def get_info_command(c: Client, msg: Message):
 
 @bot.on_message(pyrogram.filters.command(["protect", "unprotect"]) & pyrogram.filters.group)
 def protect(c: Client, msg: Message):
-    topic_id = is_topic(msg)
-    if topic_id is False:
-        return
+    topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
     tg_id = get_tg_id_by_topic(topic_id=topic_id)
     if msg.command[0] == "protect":
         is_protect = True
@@ -36,9 +35,7 @@ def protect(c: Client, msg: Message):
 
 @bot.on_message(pyrogram.filters.command(["ban", "unban"]) & pyrogram.filters.group)
 def ban_users(c: Client, msg: Message):
-    topic_id = is_topic(msg)
-    if topic_id is False:
-        return
+    topic_id = topic if (topic:= msg.reply_to_top_message_id) else msg.reply_to_message_id
     tg_id = get_tg_id_by_topic(topic_id=topic_id)
     try:
         if msg.command[0] == "ban":
