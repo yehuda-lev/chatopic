@@ -54,7 +54,7 @@ async def forward_message_from_topic(cli: Client, msg: Message):
     try:
         forward = await msg.copy(chat_id=tg_id, reply_to_message_id=reply, protect_content=is_protect)
         filters_db.create_message(tg_id_or_topic_id=topic_id, is_topic_id=True,
-                               user_msg_id=forward.id, topic_msg_id=msg.id)
+                                  user_msg_id=forward.id, topic_msg_id=msg.id)
     except BadRequest as e:
         print("forward_message_from_topic", e)
         return
