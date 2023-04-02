@@ -3,8 +3,6 @@ from pyrogram.raw import functions
 from pyrogram.raw import types as raw_types
 from pyrogram.types import Message
 
-import db
-from db import filters
 from db import filters as db_filters
 
 
@@ -14,27 +12,27 @@ def is_banned(_, __, msg: Message):
         return db_filters.get_is_banned(tg_id=tg_id)
     else:
         if db_filters.get_is_banned(tg_id=tg_id):
-            await msg.reply("the user is ban\nYou can unban him by sending the /unban command")
+            msg.reply("the user is ban\nYou can unban him by sending the /unban command")
             return False
         return True
 
 
 async def is_user_exists(_, c: Client, msg: Message):
     tg_id = msg.from_user.id
-    if filters.is_tg_id_exists(tg_id=tg_id):
+    if db_filters.is_tg_id_exists(tg_id=tg_id):
         return True
     else:
         name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
         create = await create_topic(cli=c, msg=msg)
         group_id, topic_id = int("-100" + str(create.peer_id.channel_id)), create.id
-        filters.create_user(tg_id=tg_id, group_id=group_id, topic_id=topic_id, name=name)
+        db_filters.create_user(tg_id=tg_id, group_id=group_id, topic_id=topic_id, name=name)
         return True
 
 
 async def create_topic(cli: Client, msg: Message):
     name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
     username = "@" + str(username) if (username := msg.from_user.username) else "אין"
-    peer = await cli.resolve_peer(int(filters.get_my_group()))
+    peer = await cli.resolve_peer(int(db_filters.get_my_group()))
     create = await cli.invoke(functions.channels.CreateForumTopic(
         channel=raw_types.InputChannel(channel_id=peer.channel_id, access_hash=peer.access_hash),
         title=name,
@@ -67,7 +65,7 @@ def is_topic(_, __, msg: Message):
         if not (msg.reply_to_top_message_id or msg.reply_to_message_id):
             return False
         topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
-        if not filters.is_topic_id_exists(topic_id=topic_id):
+        if not db_filters.is_topic_id_exists(topic_id=topic_id):
             return False
         return True
     return True
@@ -90,6 +88,10 @@ def is_admin(_, __, msg: Message) -> bool:
 
 def is_have_a_group(_, __, msg: Message):
     if not db_filters.check_if_have_a_group():
-        msg.reply("אין עדיין קבוצה, אני שלח את הפקודה /add_group")
+        if db_filters.is_admin_exists(tg_id=msg.from_user.id):
+            if not msg.command:
+                msg.reply("אין עדיין קבוצה, אני שלח את הפקודה /add_group")
+        else:
+            msg.reply("הבוט לא פועל עדיין אנא חזור שוב בהמשך")
         return False
     return True
