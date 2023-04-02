@@ -9,7 +9,7 @@ from db import filters as filters_db
 from tg.filters import is_admin
 
 
-@app.on_message(pyrogram.filters.command("info") & pyrogram.filters.group)
+# @app.on_message(pyrogram.filters.command("info") & pyrogram.filters.group)
 def get_info_command(c: Client, msg: Message):
     ban = "בשביל לחסום משתמש עליך לשלוח את הפקודה /ban"
     unban = "בשביל לשחרר את החסימה עליך לשלוח את הפקודה /unban"
@@ -19,7 +19,7 @@ def get_info_command(c: Client, msg: Message):
     return
 
 
-@app.on_message(pyrogram.filters.command(["protect", "unprotect"]) & pyrogram.filters.group)
+# @app.on_message(pyrogram.filters.command(["protect", "unprotect"]) & pyrogram.filters.group)
 def protect(c: Client, msg: Message):
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
     tg_id = filters_db.get_tg_id_by_topic(topic_id=topic_id)
@@ -31,7 +31,7 @@ def protect(c: Client, msg: Message):
     msg.reply("Done")
 
 
-@app.on_message(pyrogram.filters.command(["ban", "unban"]) & pyrogram.filters.group)
+# @app.on_message(pyrogram.filters.command(["ban", "unban"]) & pyrogram.filters.group)
 def ban_users(c: Client, msg: Message):
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
     tg_id = filters_db.get_tg_id_by_topic(topic_id=topic_id)
@@ -54,7 +54,7 @@ def ban_users(c: Client, msg: Message):
         print(e)
 
 
-@app.on_message(pyrogram.filters.command("add_group") & pyrogram.filters.create(is_admin))
+# @app.on_message(pyrogram.filters.command("add_group") & pyrogram.filters.create(is_admin))
 async def request_group(c: Client, msg: Message):
     peer = await c.resolve_peer(msg.chat.id)
     await c.invoke(
@@ -88,15 +88,17 @@ def reply_markup():
     ], resize=True)
 
 
-@app.on_raw_update()
+# @app.on_raw_update()
 async def create_group(c: Client, update: raw_types.UpdateNewMessage, users, chats):
     if filters_db.check_if_have_a_group():
         return
     if not update.message:
         return
-    print(update)
-    tg_id = update.message.peer_id.user_id
+    # print(update)
     try:
+        if not update.message.action:
+            return
+        tg_id = update.message.peer_id.user_id
         if filters_db.is_admin_exists(tg_id=tg_id):
             first_group_id = update.message.action.peer.channel_id
             group_id = int(f"-100{first_group_id}")
@@ -107,8 +109,8 @@ async def create_group(c: Client, update: raw_types.UpdateNewMessage, users, cha
             text = f"הקבוצה [{group_name}](t.me/c/{first_group_id}) נוספה בהצלחה"
             await c.send_message(chat_id=tg_id, reply_to_message_id=update.message.id, text=text,
                                  reply_markup=pyrogram.types.ReplyKeyboardRemove(selective=True))
-
-    except AttributeError:
-        await c.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
-                             text="הבוט בתחזוקה אנא חזור שנית בהמשך היום")
+    except AttributeError as e:
+        print(e)
+        # await c.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
+        #                      text="הבוט בתחזוקה אנא חזור שנית בהמשך היום")
         return
