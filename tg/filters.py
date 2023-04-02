@@ -5,7 +5,19 @@ from pyrogram.types import Message
 
 import db
 from db import filters
-from db.filters import is_admin_exists, check_if_have_a_group
+from db.filters import is_admin_exists, check_if_have_a_group, get_is_banned
+
+
+def is_banned(_, __, msg: Message):
+    tg_id = msg.from_user.id
+    if msg.chat.id == tg_id:
+        return get_is_banned(tg_id=tg_id)
+    else:
+        if get_is_banned(tg_id=tg_id):
+            await msg.reply("the user is ban\nYou can unban him by sending the /unban command")
+            return False
+        return True
+
 
 async def is_user_exists(_, c: Client, msg: Message):
     tg_id = msg.from_user.id
