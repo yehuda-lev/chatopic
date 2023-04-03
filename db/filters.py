@@ -78,14 +78,14 @@ def get_group_by_tg_id(tg_id: int):
     return user.group.id
 
 
-def get_topic_id_by_tg_id(tg_id: int):
+def get_topic_id_by_tg_id(tg_id: int) -> Optional[int]:
     user = get_user_by_tg_id(tg_id=tg_id)
     if user is None:
         return None
     return user.topic.id
 
 
-def get_is_protect(tg_id: int):
+def get_is_protect(tg_id: int) -> bool:
     return get_user_by_tg_id(tg_id=tg_id).protect
 
 
@@ -95,7 +95,7 @@ def change_protect(tg_id: int, is_protect: bool):
     user.protect = is_protect
 
 
-def get_is_banned(tg_id: int):
+def get_is_banned_by_tg(tg_id: int):
     return get_user_by_tg_id(tg_id=tg_id).ban
 
 
@@ -103,6 +103,16 @@ def get_is_banned(tg_id: int):
 def change_banned(tg_id: int, is_banned: bool):
     user = TgUser.get(id=str(tg_id))
     user.ban = is_banned
+
+
+@db_session
+def get_topic_by_topic_id(topic_id: int) -> TgTopic:
+    return TgTopic.get(id=topic_id)
+
+
+@db_session
+def get_user_by_topic_id(topic_id: int) -> TgUser:
+    return get_topic_by_topic_id(topic_id).user
 
 
 @db_session
