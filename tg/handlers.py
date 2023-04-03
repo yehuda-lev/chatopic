@@ -19,7 +19,7 @@ HANDLERS = [
                             & pyrogram.filters.create(tg_filters.is_topic)),
     handlers.MessageHandler(request_group, pyrogram.filters.command("add_group")
                             & pyrogram.filters.text & pyrogram.filters.create(tg_filters.is_admin)
-                            & pyrogram.filters.private & ~ pyrogram.filters.create(tg_filters.is_have_a_group)),
+                            & ~ pyrogram.filters.create(tg_filters.is_have_a_group)),
     handlers.MessageHandler(forward_message, ~ pyrogram.filters.command(
         ["start", "info", "protect", "unprotect", "ban", "unban", "add_group"])
                             & pyrogram.filters.create(tg_filters.is_not_raw)
