@@ -119,13 +119,8 @@ def get_user_by_topic_id(topic_id: int) -> TgUser:
     return get_topic_by_topic_id(topic_id).user
 
 
-@db_session
-def get_user_by_topic(topic_id: int):
-    return TgUser.get(topic=topic_id)
-
-
 def get_tg_id_by_topic(topic_id: int):
-    user = get_user_by_topic(topic_id=topic_id)
+    user = get_user_by_topic_id(topic_id=topic_id)
     if user is None:
         return None
     return user.id
