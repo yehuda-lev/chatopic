@@ -10,11 +10,11 @@ from tg.strings import resolve_msg
 def is_banned(_, __, msg: Message):
     tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
-        if db_filters.get_is_banned(tg_id=tg_id):
+        if db_filters.get_is_banned_by_tg(tg_id=tg_id):
             return False
     else:
-        # TODO get_is_banned_by_topic_id
-        if db_filters.get_is_banned(tg_id=tg_id):
+        topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
+        if db_filters.get_is_banned_by_topic_id(topic_id=topic_id):
             msg.reply(resolve_msg(key='USER_IS_BANNED', msg_or_user=msg))
             return False
     return True
