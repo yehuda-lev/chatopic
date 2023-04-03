@@ -99,7 +99,7 @@ def get_is_banned_by_tg(tg_id: int):
     return get_user_by_tg_id(tg_id=tg_id).ban
 
 
-def get_is_banned_topic_id(topic_id: int):
+def get_is_banned_by_topic_id(topic_id: int) -> bool:
     return get_user_by_topic_id(topic_id=topic_id).ban
 
 
