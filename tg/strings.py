@@ -1,3 +1,8 @@
+from typing import Optional, Union
+
+from pyrogram.raw.types import User
+from pyrogram.types import Message
+
 DEFAULT_LANG = 'he'
 
 dictionary = {
@@ -72,3 +77,12 @@ dictionary = {
     }
 }
 
+
+def resolve_msg(key: str, msg_or_user: Union[Message, User], is_raw: bool = False) -> str:
+    try:
+        return dictionary[key][msg_or_user.from_user.language_code if not is_raw else msg_or_user.lang_code]
+    except KeyError:
+        try:
+            return dictionary[key][DEFAULT_LANG]
+        except KeyError:
+            return 'Error'
