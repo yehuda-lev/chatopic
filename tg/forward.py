@@ -48,7 +48,7 @@ async def forward_message_from_user(cli: Client, msg: Message):
 async def forward_message_from_topic(cli: Client, msg: Message):
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
     tg_id = filters_db.get_tg_id_by_topic(topic_id=topic_id)
-    is_protect = filters_db.get_is_protect_by_tg_id(tg_id=tg_id)
+    is_protect = filters_db.get_is_protect_by_topic_id(topic_id=topic_id)
     reply = get_reply_to_message_by_topic(msg=msg)
     try:
         forward = await msg.copy(chat_id=tg_id, reply_to_message_id=reply, protect_content=is_protect)
