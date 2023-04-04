@@ -85,8 +85,8 @@ def get_topic_id_by_tg_id(tg_id: int) -> Optional[int]:
     return user.topic.id
 
 
-def get_is_protect_by_tg_id(tg_id: int) -> bool:
-    return get_user_by_tg_id(tg_id=tg_id).protect
+def get_is_protect_by_topic_id(topic_id: int) -> bool:
+    return get_user_by_topic_id(topic_id=topic_id).protect
 
 
 @db_session
