@@ -23,7 +23,10 @@ def is_banned(_, __, msg: Message):
 async def is_user_exists(_, c: Client, msg: Message):
     tg_id = msg.from_user.id
     if db_filters.is_tg_id_exists(tg_id=tg_id):
-        return True
+        if db_filters.is_user_active(tg_id):
+            return True
+        else:
+            db_filters.change_active(tg_id=tg_id, active=True)
     else:
         name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
         create = await create_topic(cli=c, msg=msg)
