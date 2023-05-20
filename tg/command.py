@@ -8,6 +8,14 @@ from pyrogram.types import Message
 from db import filters as filters_db
 from tg.filters import is_admin
 from tg.strings import resolve_msg
+from dotenv import load_dotenv
+
+load_dotenv()
+import os
+
+
+def send_welcome(c: Client, msg: Message):
+    msg.reply(text=os.environ['WELCOME'])
 
 
 # @app.on_message(pyrogram.filters.command("info") & pyrogram.filters.group)
@@ -105,7 +113,7 @@ async def create_group(c: Client, update: raw_types.UpdateNewMessage, users, cha
             info = await c.get_chat(chat_id=group_id)
             group_name = info.title
             filters_db.create_group(group_id=group_id, name=group_name)
-            text = resolve_msg(key='GROUP_ADD', msg_or_user=users[tg_id], is_raw=True)\
+            text = resolve_msg(key='GROUP_ADD', msg_or_user=users[tg_id], is_raw=True) \
                 .format(f"[{group_name}](t.me/c/{first_group_id})")
             await c.send_message(chat_id=tg_id, reply_to_message_id=update.message.id, text=text,
                                  reply_markup=pyrogram.types.ReplyKeyboardRemove(selective=True))
