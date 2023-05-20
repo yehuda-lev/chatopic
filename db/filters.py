@@ -155,3 +155,20 @@ def get_user_msg_id_by_topic_msg_id(topic_id: int, msg_id: int):
     if user is None:
         return None
     return user.user_msg_id
+
+
+@db_session
+def is_user_active(tg_id: int) -> bool:
+    return get_user_by_tg_id(tg_id).active
+
+
+@db_session
+def change_active(tg_id: int, active: bool):
+    user = get_user_by_tg_id(tg_id)
+    user.active = active
+
+
+@db_session
+def get_all_users() -> list[int]:
+    return select(int(i.id) for i in TgUser if not i.ban and i.active)[:]
+
