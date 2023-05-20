@@ -4,9 +4,6 @@ from pony.orm import db_session, select
 from db.tables import TgGroup, TgTopic, TgUser, Message, Admin
 
 
-# @db_session
-# def show_all_user(tg_id: int): # del
-#     return select(i for i in Users if i.tg_id == tg_id).show()
 @db_session
 def check_if_have_a_group() -> bool:
     group = select(i for i in TgGroup)
