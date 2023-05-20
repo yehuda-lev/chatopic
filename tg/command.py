@@ -9,9 +9,10 @@ from db import filters as filters_db
 from tg.filters import is_admin
 from tg.strings import resolve_msg
 from dotenv import load_dotenv
+import os
+
 
 load_dotenv()
-import os
 
 
 def send_welcome(c: Client, msg: Message):
