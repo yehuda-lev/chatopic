@@ -2,7 +2,7 @@ import pyrogram
 from pyrogram import handlers
 
 from tg import filters as tg_filters
-from tg.command import get_info_command, protect, ban_users, request_group, create_group
+from tg.command import get_info_command, protect, ban_users, request_group, create_group, send_welcome
 from tg.edit import edited_message
 from tg.forward import forward_message
 
@@ -10,6 +10,9 @@ HANDLERS = [
     handlers.MessageHandler(get_info_command, pyrogram.filters.command("info")
                             & pyrogram.filters.text & pyrogram.filters.group
                             & pyrogram.filters.create(tg_filters.is_topic)),
+    handlers.MessageHandler(send_welcome, pyrogram.filters.command("start")
+                            & pyrogram.filters.text & pyrogram.filters.private
+                            & pyrogram.filters.create(tg_filters.is_have_a_group)),
     handlers.MessageHandler(protect, pyrogram.filters.command(["protect", "unprotect"])
                             & pyrogram.filters.text & pyrogram.filters.group
                             & pyrogram.filters.create(tg_filters.is_topic)
