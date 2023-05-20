@@ -28,6 +28,7 @@ class TgTopic(db.Entity):
 class TgUser(db.Entity):
     _table_ = 'tg_user'
     id = PrimaryKey(str)
+    active = Required(bool, default=True)
     protect = Required(bool, default=False)
     ban = Required(bool, default=False)
     topic = Required(TgTopic, reverse='user')
