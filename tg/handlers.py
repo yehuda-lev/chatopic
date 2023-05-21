@@ -5,11 +5,15 @@ from tg import filters as tg_filters
 from tg.broadcast import send_message, get_message_for_subscribe
 from tg.command import (get_info_command, protect, ban_users, request_group,
                         create_group, send_welcome)
+from tg.delete import delete
 from tg.edit import edited_message
 from tg.forward import forward_message
 
 HANDLERS = [
     handlers.MessageHandler(get_info_command, pyrogram.filters.command("info")
+                            & pyrogram.filters.text & pyrogram.filters.group
+                            & pyrogram.filters.create(tg_filters.is_topic)),
+    handlers.MessageHandler(delete, pyrogram.filters.command("delete")
                             & pyrogram.filters.text & pyrogram.filters.group
                             & pyrogram.filters.create(tg_filters.is_topic)),
     handlers.MessageHandler(send_welcome, pyrogram.filters.command("start")
