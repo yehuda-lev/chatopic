@@ -1,7 +1,7 @@
 from pyrogram import Client
 from pyrogram.raw import functions
 from pyrogram.raw import types as raw_types
-from pyrogram.types import Message
+from pyrogram.types import Message, ForceReply
 
 from db import filters as db_filters
 from tg.strings import resolve_msg
@@ -98,3 +98,12 @@ def is_have_a_group(_, __, msg: Message):
             msg.reply(resolve_msg(key='BOT_NOT_WORKING', msg_or_user=msg))
         return False
     return True
+
+
+def is_force_reply(_, __, msg: Message) -> bool:
+    try:
+        if isinstance(msg.reply_to_message.reply_markup, ForceReply):
+            return True
+    except AttributeError:
+        return False
+    return False
