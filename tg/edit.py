@@ -4,7 +4,6 @@ from pyrogram import types
 from pyrogram.errors import MessageIdInvalid
 
 from db import filters as filters_db
-from tg.filters import is_have_a_group
 
 
 async def edited_message(cli: Client, msg: types.Message):
