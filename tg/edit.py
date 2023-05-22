@@ -1,8 +1,10 @@
 from pyrogram import Client
 from pyrogram import types
 from pyrogram.errors import MessageIdInvalid
+from pyrogram.types import CallbackQuery
 
 from db import filters as filters_db
+from tg.strings import resolve_msg
 
 
 async def edited_message(cli: Client, msg: types.Message):
@@ -44,7 +46,7 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id):
             await cli.edit_message_text(chat_id=chat_id, message_id=msg_id, text=msg.text,
                                         reply_markup=types.InlineKeyboardMarkup(
                                             [[types.InlineKeyboardButton(
-                                                text='Edited', callback_data='edit')]]
+                                                text=resolve_msg(key='EDIT'), callback_data='edit')]]
                                             )
                                         )
         except MessageIdInvalid:
@@ -70,11 +72,15 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id):
         await cli.edit_message_media(chat_id=chat_id, message_id=msg_id, media=media,
                                      reply_markup=types.InlineKeyboardMarkup(
                                          [[types.InlineKeyboardButton(
-                                             text='Edited', callback_data='edit')]]
+                                             text=resolve_msg(key='EDIT'), callback_data='edit')]]
                                          )
                                      )
     except MessageIdInvalid:
         pass
+
+
+def answer_the_message_is_edited(_, cbd: CallbackQuery):
+    cbd.answer(text=resolve_msg(key='EDIT_CBD'), show_alert=True)
 
 
 async def edit_message_by_topic(cli: Client, msg: types.Message):

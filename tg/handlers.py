@@ -6,7 +6,7 @@ from tg.broadcast import send_message, get_message_for_subscribe
 from tg.command import (get_info_command, protect, ban_users, request_group,
                         create_group, send_welcome)
 from tg.delete import delete
-from tg.edit import edited_message
+from tg.edit import edited_message, answer_the_message_is_edited
 from tg.forward import forward_message
 
 HANDLERS = [
@@ -36,6 +36,8 @@ HANDLERS = [
                             | pyrogram.filters.create(tg_filters.is_force_reply)),
     handlers.CallbackQueryHandler(send_message, pyrogram.filters.create(
                             lambda _, __, cbd: cbd.data.endswith('send_message'))),
+    handlers.CallbackQueryHandler(answer_the_message_is_edited, pyrogram.filters.create(
+                            lambda _, __, cbd: cbd.data == 'edit')),
     handlers.MessageHandler(forward_message, ~ pyrogram.filters.command(
         ["start", "info", "protect", "unprotect", "ban", "unban", "add_group"])
                             & pyrogram.filters.create(tg_filters.is_not_raw)

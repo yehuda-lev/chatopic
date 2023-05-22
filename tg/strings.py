@@ -76,6 +76,14 @@ dictionary = {
     'BOT_NOT_WORKING': {
         'he': 'הבוט לא פועל עדיין אנא חזור שוב בהמשך',
         'en': 'The bot is not working yet please come back later'
+    },
+    'EDIT': {
+        'he': 'נערך',
+        'en': 'Edited'
+    },
+    'EDIT_CBD': {
+        'he': 'הודעה זו נערכה !',
+        'en': 'This message has been edited!'
     }
 }
 
