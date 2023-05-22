@@ -35,7 +35,7 @@ HANDLERS = [
                             & pyrogram.filters.command("send")
                             | pyrogram.filters.create(tg_filters.is_force_reply)),
     handlers.CallbackQueryHandler(send_message, pyrogram.filters.create(
-        lambda _, __, query: query.data.endswith('send_message'))),
+                            lambda _, __, cbd: cbd.data.endswith('send_message'))),
     handlers.MessageHandler(forward_message, ~ pyrogram.filters.command(
         ["start", "info", "protect", "unprotect", "ban", "unban", "add_group"])
                             & pyrogram.filters.create(tg_filters.is_not_raw)

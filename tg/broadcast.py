@@ -23,15 +23,15 @@ def get_message_for_subscribe(_, msg: types.Message):
                       ]]))
 
 
-def send_message(c: Client, query: types.CallbackQuery):
-    tg_id = query.from_user.id
-    msg_id = query.message.id
-    reply_msg_id = query.message.reply_to_message.id
-    if query.data == 'un_send_message':
+def send_message(c: Client, cbd: types.CallbackQuery):
+    tg_id = cbd.from_user.id
+    msg_id = cbd.message.id
+    reply_msg_id = cbd.message.reply_to_message.id
+    if cbd.data == 'un_send_message':
         c.send_message(chat_id=tg_id, text='ההודעה לא תישלח למנויים')
         c.delete_messages(chat_id=tg_id, message_ids=msg_id)
 
-    elif query.data == 'send_message':
+    elif cbd.data == 'send_message':
 
         log_file = open('logger.txt', 'a+')
         users = db_filters.get_all_users()
