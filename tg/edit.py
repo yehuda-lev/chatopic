@@ -1,4 +1,3 @@
-import pyrogram
 from pyrogram import Client
 from pyrogram import types
 from pyrogram.errors import MessageIdInvalid
