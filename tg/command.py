@@ -2,13 +2,13 @@ from pyrogram import Client
 from pyrogram.errors import BadRequest
 from pyrogram.raw import functions
 from pyrogram.raw import types as raw_types
+from pyrogram.raw.types import MessageService, MessageActionTopicEdit, MessageActionRequestedPeer
 from pyrogram.types import Message, ReplyKeyboardRemove
 
 from db import filters as filters_db
 from tg.strings import resolve_msg
 from dotenv import load_dotenv
 import os
-
 
 load_dotenv()
 
@@ -70,7 +70,7 @@ def ban_users(c: Client, msg: Message):
         c.invoke(functions.channels.EditForumTopic(
             channel=raw_types.InputChannel(peer),
             topic_id=topic_id, closed=closed
-            )
+        )
         )
     except BadRequest as e:
         print(e)
@@ -126,29 +126,54 @@ async def create_group(c: Client, update: raw_types.UpdateNewMessage, users, cha
     in the bot a receives a message 'RequestPeerTypeChat'
     """
 
-    if filters_db.check_if_have_a_group():  # is have a group
-        return
-
     try:
         if not update.message:
             return
         if not update.message.action:
             return
 
-        tg_id = update.message.peer_id.user_id
-        if filters_db.is_admin_exists(tg_id=tg_id):  # is admin
+        if isinstance(update.message.action, MessageActionRequestedPeer):  # add group
+            if filters_db.check_if_have_a_group():  # is have a group
+                return
+            tg_id = update.message.peer_id.user_id
+            if filters_db.is_admin_exists(tg_id=tg_id):  # is admin
 
-            first_group_id = update.message.action.peer.channel_id
-            group_id = int(f"-100{first_group_id}")
-            info = await c.get_chat(chat_id=group_id)
-            group_name = info.title
+                first_group_id = update.message.action.peer.channel_id
+                group_id = int(f"-100{first_group_id}")
+                info = await c.get_chat(chat_id=group_id)
+                group_name = info.title
 
-            filters_db.create_group(group_id=group_id, name=group_name)  # create group in db
+                filters_db.create_group(group_id=group_id, name=group_name)  # create group in db
 
-            text = resolve_msg(key='GROUP_ADD', msg_or_user=users[tg_id], is_raw=True) \
-                .format(f"[{group_name}](t.me/c/{first_group_id})")
+                text = resolve_msg(key='GROUP_ADD', msg_or_user=users[tg_id], is_raw=True) \
+                    .format(f"[{group_name}](t.me/c/{first_group_id})")
 
-            await c.send_message(chat_id=tg_id, reply_to_message_id=update.message.id, text=text,
-                                 reply_markup=ReplyKeyboardRemove(selective=True))
+                await c.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
+                                     text=text,
+                                     reply_markup=ReplyKeyboardRemove(selective=True))
+
+        # close/open topic > ban/unban user from the bot
+        elif isinstance(update.message.action, MessageActionTopicEdit):
+            await baned_user_by_closed_topic(c, update)
+
     except AttributeError:
         return
+
+
+async def baned_user_by_closed_topic(c: Client, update: raw_types.UpdateNewMessage):
+    """
+    if topic is closed or opened > ban or unban the user
+    """
+
+    tg_id = filters_db.get_tg_id_by_topic(update.message.reply_to.reply_to_msg_id)
+    banned = update.message.action.closed
+    filters_db.change_banned(tg_id=tg_id, is_banned=banned)
+
+    if banned:
+        text = resolve_msg(key='BAN')
+    else:
+        text = resolve_msg(key='UNBAN')
+    text = f'the user banned= {banned}'
+
+    await c.send_message(chat_id=int(f'-100{update.message.peer_id.channel_id}'),
+                         reply_to_message_id=update.message.id, text=text)
