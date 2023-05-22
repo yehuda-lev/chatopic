@@ -56,7 +56,7 @@ def create_user(tg_id: int, group_id: int, topic_id: int, name: Optional[str]):
 
 
 @db_session
-def get_my_group() -> TgGroup.id | str:
+def get_my_group() -> int | str:
     try:
         return select(i.id for i in TgGroup)[:][0]
     except IndexError:
@@ -68,14 +68,14 @@ def get_user_by_tg_id(tg_id: int) -> TgUser:
     return TgUser.get(id=str(tg_id))
 
 
-def get_group_by_tg_id(tg_id: int) -> TgGroup.id | None:
+def get_group_by_tg_id(tg_id: int) -> Optional[int]:
     user = get_user_by_tg_id(tg_id=tg_id)
     if user is None:
         return None
     return user.group.id
 
 
-def get_topic_id_by_tg_id(tg_id: int) -> TgUser.id.id | None:
+def get_topic_id_by_tg_id(tg_id: int) -> Optional[int]:
     user = get_user_by_tg_id(tg_id=tg_id)
     if user is None:
         return None
@@ -116,7 +116,7 @@ def get_user_by_topic_id(topic_id: int) -> TgUser:
     return get_topic_by_topic_id(topic_id).user
 
 
-def get_tg_id_by_topic(topic_id: int) -> TgUser.id | None:
+def get_tg_id_by_topic(topic_id: int) -> Optional[int]:
     user = get_user_by_topic_id(topic_id=topic_id)
     if user is None:
         return None
@@ -138,7 +138,7 @@ def get_user_by_user_msg_id(tg_id: int, msg_id: int) -> Message:
 
 
 @db_session
-def get_topic_msg_id_by_user_msg_id(tg_id: int, msg_id: int) -> Message.topic_msg_id | None:
+def get_topic_msg_id_by_user_msg_id(tg_id: int, msg_id: int) -> Optional[int]:
     user = get_user_by_user_msg_id(tg_id=tg_id, msg_id=msg_id)
     if user is None:
         return None
@@ -150,7 +150,7 @@ def get_user_by_topic_msg_id(topic_id: int, msg_id: int) -> Message:
     return Message.get(topic_id=topic_id, topic_msg_id=msg_id)
 
 
-def get_user_msg_id_by_topic_msg_id(topic_id: int, msg_id: int) -> Message.user_msg_id | None:
+def get_user_msg_id_by_topic_msg_id(topic_id: int, msg_id: int) -> Optional[int]:
     user = get_user_by_topic_msg_id(topic_id=topic_id, msg_id=msg_id)
     if user is None:
         return None
