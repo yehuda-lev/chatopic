@@ -15,7 +15,7 @@ def is_banned(_, __, msg: Message):
     else:
         topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
         if db_filters.get_is_banned_by_topic_id(topic_id=topic_id):
-            msg.reply(resolve_msg(key='USER_IS_BANNED', msg_or_user=msg))
+            msg.reply(resolve_msg(key='USER_IS_BANNED'))
             return False
     return True
 
@@ -48,7 +48,7 @@ async def create_topic(cli: Client, msg: Message):
         send_as=None
     )
     )
-    text = resolve_msg(key='INFO_TOPIC', msg_or_user=msg).\
+    text = resolve_msg(key='INFO_TOPIC').\
         format(f"[{name}](tg://user?id={msg.from_user.id})", f"{username}", f"{msg.from_user.id}")
     photo = photo if (photo := msg.from_user.photo) else None
     chat_id = int("-100" + str(create.updates[1].message.peer_id.channel_id))
@@ -84,7 +84,7 @@ def is_not_raw(_, __, msg: Message) -> bool:
 
 def is_admin(_, __, msg: Message) -> bool:
     if not db_filters.is_admin_exists(tg_id=msg.from_user.id):
-        msg.reply(resolve_msg(key='IS_ADMIN', msg_or_user=msg))
+        msg.reply(resolve_msg(key='IS_ADMIN'))
         return False
     return True
 
@@ -93,9 +93,9 @@ def is_have_a_group(_, __, msg: Message):
     if not db_filters.check_if_have_a_group():
         if db_filters.is_admin_exists(tg_id=msg.from_user.id):
             if not (msg.command[0] == 'add_group') and not msg.service:
-                msg.reply(resolve_msg(key='GROUP_NOT_EXISTS', msg_or_user=msg))
+                msg.reply(resolve_msg(key='GROUP_NOT_EXISTS'))
         else:
-            msg.reply(resolve_msg(key='BOT_NOT_WORKING', msg_or_user=msg))
+            msg.reply(resolve_msg(key='BOT_NOT_WORKING'))
         return False
     return True
 

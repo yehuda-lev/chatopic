@@ -26,7 +26,7 @@ def get_info_command(_, msg: Message):
     send information what the user can do in topic.
     """
 
-    msg.reply(text=resolve_msg(key='INFO', msg_or_user=msg))
+    msg.reply(text=resolve_msg(key='INFO'))
 
 
 def protect(_, msg: Message):
@@ -39,10 +39,10 @@ def protect(_, msg: Message):
 
     if msg.command[0] == "protect":
         is_protect = True
-        msg.reply(resolve_msg('PROTECT', msg))
+        msg.reply(resolve_msg('PROTECT'))
     else:
         is_protect = False
-        msg.reply(resolve_msg('UNPROTECT', msg))
+        msg.reply(resolve_msg('UNPROTECT'))
 
     filters_db.change_protect(tg_id=tg_id, is_protect=is_protect)
 
@@ -58,12 +58,12 @@ def ban_users(c: Client, msg: Message):
     try:
         if msg.command[0] == "ban":
             filters_db.change_banned(tg_id=tg_id, is_banned=True)
-            msg.reply(text=resolve_msg(key='BAN', msg_or_user=msg))
+            msg.reply(text=resolve_msg(key='BAN'))
             closed = True
 
         else:
             filters_db.change_banned(tg_id=tg_id, is_banned=False)
-            msg.reply(text=resolve_msg(key='UNBAN', msg_or_user=msg))
+            msg.reply(text=resolve_msg(key='UNBAN'))
             closed = False
         # close/open the topic
         peer = c.resolve_peer(msg.chat.id)
@@ -81,12 +81,12 @@ async def request_group(c: Client, msg: Message):
     in the admin want to add group (sent command '/add_group') for the bot
     """
     if msg.chat.id != msg.from_user.id:
-        await msg.reply(text=resolve_msg(key='REQUEST_IN_GROUP', msg_or_user=msg))
+        await msg.reply(text=resolve_msg(key='REQUEST_IN_GROUP'))
         return
     peer = await c.resolve_peer(msg.chat.id)
     await c.invoke(
         functions.messages.SendMessage(peer=peer,
-                                       message=resolve_msg(key='REQUEST', msg_or_user=msg),
+                                       message=resolve_msg(key='REQUEST'),
                                        random_id=c.rnd_id(),
                                        reply_markup=reply_markup(msg))
     )
@@ -101,7 +101,7 @@ def reply_markup(msg):
         raw_types.KeyboardButtonRow(
             buttons=[
                 raw_types.KeyboardButtonRequestPeer(
-                    text=resolve_msg(key='REQUEST_BUTTON', msg_or_user=msg), button_id=1,
+                    text=resolve_msg(key='REQUEST_BUTTON'), button_id=1,
                     peer_type=raw_types.RequestPeerTypeChat(
                         forum=True, bot_participant=True,
                         user_admin_rights=raw_types.ChatAdminRights(
@@ -145,7 +145,7 @@ async def create_group(c: Client, update: raw_types.UpdateNewMessage, users, cha
 
                 filters_db.create_group(group_id=group_id, name=group_name)  # create group in db
 
-                text = resolve_msg(key='GROUP_ADD', msg_or_user=users[tg_id], is_raw=True) \
+                text = resolve_msg(key='GROUP_ADD') \
                     .format(f"[{group_name}](t.me/c/{first_group_id})")
 
                 await c.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
@@ -173,7 +173,7 @@ async def baned_user_by_closed_topic(c: Client, update: raw_types.UpdateNewMessa
         text = resolve_msg(key='BAN')
     else:
         text = resolve_msg(key='UNBAN')
-    text = f'the user banned= {banned}'
+    # text = f'the user banned= {banned}'
 
     await c.send_message(chat_id=int(f'-100{update.message.peer_id.channel_id}'),
                          reply_to_message_id=update.message.id, text=text)
