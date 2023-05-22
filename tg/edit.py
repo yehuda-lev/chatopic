@@ -41,7 +41,12 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id):
 
     if msg.text:  # not caption
         try:
-            await cli.edit_message_text(chat_id=chat_id, message_id=msg_id, text=msg.text)
+            await cli.edit_message_text(chat_id=chat_id, message_id=msg_id, text=msg.text,
+                                        reply_markup=types.InlineKeyboardMarkup(
+                                            [[types.InlineKeyboardButton(
+                                                text='Edited', callback_data='edit')]]
+                                            )
+                                        )
         except MessageIdInvalid:
             pass
         return
@@ -62,7 +67,12 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id):
         return
 
     try:
-        await cli.edit_message_media(chat_id=chat_id, message_id=msg_id, media=media)
+        await cli.edit_message_media(chat_id=chat_id, message_id=msg_id, media=media,
+                                     reply_markup=types.InlineKeyboardMarkup(
+                                         [[types.InlineKeyboardButton(
+                                             text='Edited', callback_data='edit')]]
+                                         )
+                                     )
     except MessageIdInvalid:
         pass
 
