@@ -11,14 +11,16 @@ dictionary = {
         'en': 'Start'
     },
     'INFO': {
-        'he': 'בשביל לחסום משתמש עליך לשלוח את הפקודה /ban\n'
-              'בשביל לשחרר את החסימה עליך לשלוח את הפקודה /unban\n'
+        'he': 'בשביל לחסום משתמש עליך לשלוח את הפקודה /ban או לסגור את הנושא. \n'
+              'בשביל לשחרר את החסימה עליך לשלוח את הפקודה /unban או לפתוח את הנושא. \n\n'
               'בשביל שהמשתמש לא יוכל להעתיק את ההודעות מעתה ואילך עליך לשלוח את הפקודה /protect\n'
-              'בשביל שהמשתמש יוכל לחזור להעתיק הודעות עליך לשלוח את הפקודה /unprotect',
-        'en': 'To block a user you must send the command /ban\n'
-              'To release the block you must send the command /unban\n'
+              'בשביל שהמשתמש יוכל לחזור להעתיק הודעות עליך לשלוח את הפקודה /unprotect \n\n'
+              'בשביל למחוק הודעה בצאט עליך להגיב על ההודעה עם הפקודה /delete',
+        'en': 'To block a user you must send the /ban command or close the topic. \n'
+              'To release the block you must send the /unban command or open the topic. \n\n'
               'So that the user cannot copy the messages from now on, you must send the command /protect\n'
-              'For the user to be able to copy messages again, you must send the command /unprotect'
+              'For the user to be able to copy messages again, you must send the command /unprotect \n\n' 
+              'To delete a chat message you must respond to the message with the command /delete',
     },
     'PROTECT': {
         'he': 'בוצע. \nהמשתמש אינו יכול להעתיק את ההודעות עכשיו\nלשינוי שלחו את הפקודה /unprotect',
