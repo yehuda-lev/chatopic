@@ -92,7 +92,10 @@ def is_admin(_, __, msg: Message) -> bool:
 def is_have_a_group(_, __, msg: Message):
     if not db_filters.check_if_have_a_group():
         if db_filters.is_admin_exists(tg_id=msg.from_user.id):
-            if not (msg.command[0] == 'add_group') and not msg.service:
+            if not msg.service:
+                if msg.command:
+                    if msg.command[0] == 'add_group':
+                        return False
                 msg.reply(resolve_msg(key='GROUP_NOT_EXISTS'))
         else:
             msg.reply(resolve_msg(key='BOT_NOT_WORKING'))
