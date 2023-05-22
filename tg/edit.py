@@ -1,15 +1,53 @@
 import pyrogram
 from pyrogram import Client
 from pyrogram import types
+from pyrogram.errors import MessageIdInvalid
 
 from db import filters as filters_db
 from tg.filters import is_have_a_group
 
 
-async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id):
-    if msg.text:
-        await cli.edit_message_text(chat_id=chat_id, message_id=msg_id,text=msg.text)
+async def edited_message(cli: Client, msg: types.Message):
+    """
+    edit message in user if edited by topic
+    or edit message in topic if edited by user
+    """
+
+    tg_id = msg.from_user.id
+    if msg.chat.id == tg_id:  # edited by user
+        await edit_message_by_user(cli=cli, msg=msg)
+
+    elif filters_db.is_group_exists(group_id=msg.chat.id):  # edited by topic
+        await edit_message_by_topic(cli, msg)
+
+    else:
+        print("not edited")
         return
+
+
+async def edit_message_by_user(cli: Client, msg: types.Message):
+    """
+    the user edit message > edit message in topic
+    """
+
+    tg_id = msg.from_user.id
+    chat_id = filters_db.get_group_by_tg_id(tg_id=tg_id)
+    msg_id = filters_db.get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg.id)
+    if msg_id is None:
+        return
+    await edit_message(cli, msg, chat_id, msg_id)
+
+
+async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id):
+    """edit message in chat_id"""
+
+    if msg.text:  # not caption
+        try:
+            await cli.edit_message_text(chat_id=chat_id, message_id=msg_id, text=msg.text)
+        except MessageIdInvalid:
+            pass
+        return
+
     caption = text if (text := msg.caption) else None
     if msg.photo:
         media = types.InputMediaPhoto(media=msg.photo.file_id, caption=caption)
@@ -24,34 +62,25 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id):
     else:
         print(msg)
         return
-    await cli.edit_message_media(chat_id=chat_id, message_id=msg_id, media=media)
 
-
-async def edit_message_by_user(cli: Client, msg: types.Message):
-    tg_id = msg.from_user.id
-    chat_id = filters_db.get_group_by_tg_id(tg_id=tg_id)
-    msg_id = filters_db.get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg.id)
-    if msg_id is None:
-        return
-    await edit_message(cli, msg, chat_id, msg_id)
+    try:
+        await cli.edit_message_media(chat_id=chat_id, message_id=msg_id, media=media)
+    except MessageIdInvalid:
+        pass
 
 
 async def edit_message_by_topic(cli: Client, msg: types.Message):
+    """
+    the message edit in topic > edit message in the user
+    """
+
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
     chat_id = filters_db.get_tg_id_by_topic(topic_id=topic_id)
+
     msg_id = filters_db.get_user_msg_id_by_topic_msg_id(topic_id, msg_id=msg.id)
+
     if msg_id is None:
         return
+
     await edit_message(cli, msg, chat_id, msg_id)
 
-
-# @bot.on_edited_message(pyrogram.filters.create(is_have_a_group))
-async def edited_message(cli: Client, msg: types.Message):
-    tg_id = msg.from_user.id
-    if msg.chat.id == tg_id:
-        await edit_message_by_user(cli=cli, msg=msg)
-    elif filters_db.is_group_exists(group_id=msg.chat.id):
-        await edit_message_by_topic(cli, msg)
-    else:
-        print("not edited")
-        return
