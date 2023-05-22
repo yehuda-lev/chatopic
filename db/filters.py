@@ -56,7 +56,7 @@ def create_user(tg_id: int, group_id: int, topic_id: int, name: Optional[str]):
 
 
 @db_session
-def get_my_group() -> TgGroup.id:
+def get_my_group() -> TgGroup.id | str:
     try:
         return select(i.id for i in TgGroup)[:][0]
     except IndexError:
@@ -64,18 +64,18 @@ def get_my_group() -> TgGroup.id:
 
 
 @db_session
-def get_user_by_tg_id(tg_id: int):
+def get_user_by_tg_id(tg_id: int) -> TgUser:
     return TgUser.get(id=str(tg_id))
 
 
-def get_group_by_tg_id(tg_id: int):
+def get_group_by_tg_id(tg_id: int) -> TgGroup.id | None:
     user = get_user_by_tg_id(tg_id=tg_id)
     if user is None:
         return None
     return user.group.id
 
 
-def get_topic_id_by_tg_id(tg_id: int) -> Optional[int]:
+def get_topic_id_by_tg_id(tg_id: int) -> TgUser.id.id | None:
     user = get_user_by_tg_id(tg_id=tg_id)
     if user is None:
         return None
@@ -92,7 +92,7 @@ def change_protect(tg_id: int, is_protect: bool):
     user.protect = is_protect
 
 
-def get_is_banned_by_tg_id(tg_id: int):
+def get_is_banned_by_tg_id(tg_id: int) -> bool:
     return get_user_by_tg_id(tg_id=tg_id).ban
 
 
@@ -116,7 +116,7 @@ def get_user_by_topic_id(topic_id: int) -> TgUser:
     return get_topic_by_topic_id(topic_id).user
 
 
-def get_tg_id_by_topic(topic_id: int):
+def get_tg_id_by_topic(topic_id: int) -> TgUser.id | None:
     user = get_user_by_topic_id(topic_id=topic_id)
     if user is None:
         return None
@@ -133,12 +133,12 @@ def create_message(tg_id_or_topic_id: int, is_topic_id: bool, user_msg_id: int, 
 
 
 @db_session
-def get_user_by_user_msg_id(tg_id: int, msg_id: int):
+def get_user_by_user_msg_id(tg_id: int, msg_id: int) -> Message:
     return Message.get(tg_id=str(tg_id), user_msg_id=msg_id)
 
 
 @db_session
-def get_topic_msg_id_by_user_msg_id(tg_id: int, msg_id: int):
+def get_topic_msg_id_by_user_msg_id(tg_id: int, msg_id: int) -> Message.topic_msg_id | None:
     user = get_user_by_user_msg_id(tg_id=tg_id, msg_id=msg_id)
     if user is None:
         return None
@@ -146,11 +146,11 @@ def get_topic_msg_id_by_user_msg_id(tg_id: int, msg_id: int):
 
 
 @db_session
-def get_user_by_topic_msg_id(topic_id: int, msg_id: int):
+def get_user_by_topic_msg_id(topic_id: int, msg_id: int) -> Message:
     return Message.get(topic_id=topic_id, topic_msg_id=msg_id)
 
 
-def get_user_msg_id_by_topic_msg_id(topic_id: int, msg_id: int):
+def get_user_msg_id_by_topic_msg_id(topic_id: int, msg_id: int) -> Message.user_msg_id | None:
     user = get_user_by_topic_msg_id(topic_id=topic_id, msg_id=msg_id)
     if user is None:
         return None
