@@ -25,6 +25,10 @@ def delete(c: Client, msg: Message):
             tg_id = db_filters.get_tg_id_by_topic(topic_id=topic_id)
             c.delete_messages(chat_id=tg_id, message_ids=reply)
             c.delete_messages(chat_id=msg.chat.id, message_ids=msg.reply_to_message.id)
+            c.delete_messages(chat_id=msg.chat.id, message_ids=msg.id)
+        else:
+            c.delete_messages(chat_id=msg.chat.id, message_ids=msg.reply_to_message.id)
+            c.delete_messages(chat_id=msg.chat.id, message_ids=msg.id)
 
 
 
