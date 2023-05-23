@@ -56,9 +56,13 @@ dictionary = {
     },
     'INFO_TOPIC': {
         'he': '**פרטים על המשתמש**: \n**שם:** {0}\n**שם משתמש: {1}'
-              '\n\u200f**ID:** `{2}` \nלקבלת מידע על הפקודות הנתמכות בצאט אנא שלח את הפקודה /info',
+              '\n\u200f**ID:** `{2}` '
+              '\n\u200ftg://openmessage?user_id={3}'
+              '\nלקבלת מידע על הפקודות הנתמכות בצאט אנא שלח את הפקודה /info',
         'en': '**User details**: \n**Name:** {0}\n**Username: {1}'
-              '\n**ID:** `{2}` \nFor information about the commands '
+              '\n**ID:** `{2}` '
+              '\ntg://openmessage?user_id={3}'
+              '\nFor information about the commands '
               'supported in chat please send the command /info'
     },
     'IS_ADMIN': {

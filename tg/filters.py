@@ -66,7 +66,7 @@ async def create_topic(cli: Client, msg: Message):
     )
 
     text = resolve_msg(key='INFO_TOPIC').\
-        format(f"[{name}](tg://user?id={msg.from_user.id})", f"{username}", f"{msg.from_user.id}")
+        format(f"[{name}](tg://user?id={msg.from_user.id})", f"{username}", f"{msg.from_user.id}", f"{msg.from_user.id}")
 
     # check if user have a photo
     photo = photo if (photo := msg.from_user.photo) else None
