@@ -1,6 +1,6 @@
 from pyrogram import Client
 from pyrogram import types
-from pyrogram.errors import MessageIdInvalid
+from pyrogram.errors import MessageIdInvalid, MessageNotModified
 from pyrogram.types import CallbackQuery
 
 from db import filters as filters_db
@@ -48,6 +48,8 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topi
                                         )
         except MessageIdInvalid:
             pass
+        except MessageNotModified:
+            pass
         return
 
     caption = text if (text := msg.caption) else None
@@ -70,6 +72,8 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topi
                                      reply_markup=send_reply_markup_only_in_topic(is_topic)
                                      )
     except MessageIdInvalid:
+        pass
+    except MessageNotModified:
         pass
 
 
