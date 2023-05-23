@@ -1,6 +1,5 @@
 import pyrogram
 from pyrogram import handlers
-from pyrogram.enums import MessageEntityType
 
 from tg import filters as tg_filters
 from tg.broadcast import send_message, get_message_for_subscribe
@@ -13,11 +12,11 @@ from tg.forward import forward_message
 HANDLERS = [
     handlers.MessageHandler(get_info_command, pyrogram.filters.command("info")
                             & pyrogram.filters.text & pyrogram.filters.group
-                            & pyrogram.filters.create(tg_filters.is_topic)),
+                            & pyrogram.filters.create(tg_filters.is_topic_or_is_user)),
 
     handlers.MessageHandler(delete, pyrogram.filters.command("delete")
                             & pyrogram.filters.text & pyrogram.filters.group
-                            & pyrogram.filters.create(tg_filters.is_topic)),
+                            & pyrogram.filters.create(tg_filters.is_topic_or_is_user)),
 
     handlers.MessageHandler(send_welcome, pyrogram.filters.command("start")
                             & pyrogram.filters.text & pyrogram.filters.private
@@ -25,7 +24,7 @@ HANDLERS = [
 
     handlers.MessageHandler(protect, pyrogram.filters.command(["protect", "unprotect"])
                             & pyrogram.filters.text & pyrogram.filters.group
-                            & pyrogram.filters.create(tg_filters.is_topic)
+                            & pyrogram.filters.create(tg_filters.is_topic_or_is_user)
                             & pyrogram.filters.create(tg_filters.is_banned)),
 
     handlers.MessageHandler(request_group, pyrogram.filters.command("add_group")
@@ -50,13 +49,13 @@ HANDLERS = [
                             pyrogram.filters.create(tg_filters.is_command)
                             & pyrogram.filters.create(tg_filters.is_not_raw)
                             & pyrogram.filters.create(tg_filters.is_have_a_group)
-                            & pyrogram.filters.create(tg_filters.is_topic)
+                            & pyrogram.filters.create(tg_filters.is_topic_or_is_user)
                             & pyrogram.filters.create(tg_filters.is_user_exists)
                             & pyrogram.filters.create(tg_filters.is_banned)
                             & ~ pyrogram.filters.create(tg_filters.is_force_reply)),
 
     handlers.EditedMessageHandler(edited_message, pyrogram.filters.create(tg_filters.is_have_a_group)
-                                  & pyrogram.filters.create(tg_filters.is_topic)
+                                  & pyrogram.filters.create(tg_filters.is_topic_or_is_user)
                                   & pyrogram.filters.create(tg_filters.is_banned)),
 
     handlers.RawUpdateHandler(create_group)
