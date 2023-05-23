@@ -63,6 +63,9 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topi
         media = types.InputMediaAudio(media=msg.audio.file_id, caption=caption)
     elif msg.animation:
         media = types.InputMediaAnimation(media=msg.animation.file_id)
+    elif msg.voice:
+        # TODO check if you can edit the message
+        return
     else:
         print(msg)
         return
