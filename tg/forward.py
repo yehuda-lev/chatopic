@@ -18,7 +18,7 @@ async def forward_message(cli: Client, msg: Message):
     tg_id = msg.from_user.id
 
     if msg.chat.id == tg_id:  # the message sent by user
-        await forward_message_from_user(msg=msg)
+        await forward_message_from_user(c=cli, msg=msg)
 
     elif db_filters.is_group_exists(group_id=msg.chat.id):  # the message sent by topic
         await forward_message_from_topic(msg=msg)
@@ -47,7 +47,7 @@ def get_reply_to_message_by_user(msg: Message) -> int:
     return reply
 
 
-async def forward_message_from_user(msg: Message):
+async def forward_message_from_user(c: Client, msg: Message):
     """
     the message sent by user > forward message to topic
     """
@@ -57,6 +57,9 @@ async def forward_message_from_user(msg: Message):
     reply = get_reply_to_message_by_user(msg=msg)
 
     try:
+        if msg.poll or msg.venue or msg.contact or msg.location:
+            send_contact_or_poll_or_location(c, msg, int(group), reply)
+            return
         forward = await msg.copy(chat_id=int(group), reply_to_message_id=reply)
         db_filters.create_message(tg_id_or_topic_id=tg_id, is_topic_id=False,
                                   user_msg_id=msg.id, topic_msg_id=forward.id)
@@ -112,3 +115,52 @@ async def forward_message_from_topic(msg: Message):
     except BadRequest as e:
         db_filters.change_active(tg_id=tg_id, active=False)
         print(e)
+
+
+def send_contact_or_poll_or_location(c: Client, msg: Message, group: int, reply: int | None):
+    pass
+    # try:
+    #     print(reply, group)
+    #     c.send_message(chat_id=group, text='hello', reply_to_message_id=reply)
+    #     c.send_message(chat_id=-1001943931755, text='hello', reply_to_message_id=None)
+    #     msg.copy(chat_id=group, reply_to_message_id=reply)
+    #     if msg.contact is not None:
+    #         print('contact')
+    #         # Handle contact message
+    #         c.send_contact(
+    #             chat_id=group,
+    #             phone_number=msg.contact.phone_number,
+    #             first_name=msg.contact.first_name,
+    #             last_name=msg.contact.last_name,
+    #             reply_to_message_id=reply
+    #         )
+    #     elif msg.location is not None:
+    #         print('location')
+    #         # Handle location message
+    #         c.send_location(
+    #             chat_id=group,
+    #             latitude=msg.location.latitude,
+    #             longitude=msg.location.longitude,
+    #             reply_to_message_id=reply
+    #         )
+    #     elif msg.poll is not None:
+    #         print('poll')
+    #         # Handle quiz message
+    #         c.send_poll(
+    #             chat_id=group,
+    #             question=msg.poll.question,
+    #             options=[o.text for o in msg.poll.options],
+    #             reply_to_message_id=reply
+    #         )
+    #     elif msg.venue is not None:
+    #         print('venue')
+    #         # Handle location message
+    #         c.send_location(
+    #             chat_id=group,
+    #             latitude=msg.venue.location.latitude,
+    #             longitude=msg.venue.location.longitude,
+    #             reply_to_message_id=reply
+    #         )
+    # except BadRequest as e:
+    #     print("forward_message_from_user", e)
+    #     return
