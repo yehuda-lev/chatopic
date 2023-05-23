@@ -35,19 +35,16 @@ async def edit_message_by_user(cli: Client, msg: types.Message):
     msg_id = filters_db.get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg.id)
     if msg_id is None:
         return
-    await edit_message(cli, msg, chat_id, msg_id)
+    await edit_message(cli, msg, chat_id, msg_id, is_topic=True)
 
 
-async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id):
+async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topic: bool):
     """edit message in chat_id"""
 
     if msg.text:  # not caption
         try:
             await cli.edit_message_text(chat_id=chat_id, message_id=msg_id, text=msg.text,
-                                        reply_markup=types.InlineKeyboardMarkup(
-                                            [[types.InlineKeyboardButton(
-                                                text=resolve_msg(key='EDIT'), callback_data='edit')]]
-                                            )
+                                        reply_markup=send_reply_markup_only_in_topic(is_topic)
                                         )
         except MessageIdInvalid:
             pass
@@ -70,13 +67,19 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id):
 
     try:
         await cli.edit_message_media(chat_id=chat_id, message_id=msg_id, media=media,
-                                     reply_markup=types.InlineKeyboardMarkup(
-                                         [[types.InlineKeyboardButton(
-                                             text=resolve_msg(key='EDIT'), callback_data='edit')]]
-                                         )
+                                     reply_markup=send_reply_markup_only_in_topic(is_topic)
                                      )
     except MessageIdInvalid:
         pass
+
+
+def send_reply_markup_only_in_topic(is_topic: bool):
+    if is_topic:
+        return types.InlineKeyboardMarkup(
+            [[types.InlineKeyboardButton(
+                text=resolve_msg(key='EDIT'), callback_data='edit')]]
+        )
+    return None
 
 
 def answer_the_message_is_edited(_, cbd: CallbackQuery):
@@ -96,5 +99,5 @@ async def edit_message_by_topic(cli: Client, msg: types.Message):
     if msg_id is None:
         return
 
-    await edit_message(cli, msg, chat_id, msg_id)
+    await edit_message(cli, msg, chat_id, msg_id, is_topic=False)
 
