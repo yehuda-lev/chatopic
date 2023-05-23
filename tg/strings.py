@@ -1,8 +1,3 @@
-from typing import Optional, Union
-
-from pyrogram.raw.types import User
-from pyrogram.types import Message
-
 DEFAULT_LANG = 'he'
 
 dictionary = {
@@ -11,13 +6,14 @@ dictionary = {
         'en': 'Start'
     },
     'INFO': {
-        'he': 'בשביל לחסום משתמש עליך לשלוח את הפקודה /ban או לסגור את הנושא. \n'
-              'בשביל לשחרר את החסימה עליך לשלוח את הפקודה /unban או לפתוח את הנושא. \n\n'
+        'he': 'בשביל לחסום משתמש עליך לסגור את הנושא. \n'
+              'בשביל לשחרר את החסימה עליך לפתוח את הנושא. \n\n'
               'בשביל שהמשתמש לא יוכל להעתיק את ההודעות מעתה ואילך עליך לשלוח את הפקודה /protect\n'
               'בשביל שהמשתמש יוכל לחזור להעתיק הודעות עליך לשלוח את הפקודה /unprotect \n\n'
               'בשביל למחוק הודעה בצאט עליך להגיב על ההודעה עם הפקודה /delete',
-        'en': 'To block a user you must send the /ban command or close the topic. \n'
-              'To release the block you must send the /unban command or open the topic. \n\n'
+
+        'en': 'To block a user you must close the topic. \n'
+              'To release the block you must open the topic. \n\n'
               'So that the user cannot copy the messages from now on, you must send the command /protect\n'
               'For the user to be able to copy messages again, you must send the command /unprotect \n\n' 
               'To delete a chat message you must respond to the message with the command /delete',
@@ -31,12 +27,12 @@ dictionary = {
         'en': 'Done. \nThe user can copy the messages now\nTo change send the command /protect'
     },
     'BAN': {
-        'he': 'המשתמש נחסם\nלשינוי שלחו את הפקודה /unban',
-        'en': 'banned \nYou can unban him by sending the /unban command'
+        'he': 'המשתמש נחסם \nלשחרור, אנא פתחו את הנושא (topic).',
+        'en': 'The user has been blocked \nTo release, please open the topic.'
     },
     'UNBAN': {
-        'he': 'המשתמש שוחרר\nלשינוי שלחו את הפקודה /ban',
-        'en': 'unbanned \nYou can block it again by sending the /ban command'
+        'he': 'המשתמש שוחרר \nלחסימה, אנא סגרו את הנושא (topic).',
+        'en': 'The user has been released \nfor blocking, please close the topic.'
     },
     'REQUEST': {
         'he': 'אנא לחץ על הכפתור למטה כדי להוסיף את הבוט לקבוצה עם נושאים',
@@ -55,8 +51,8 @@ dictionary = {
         'en': 'Group {0} successfully added'
     },
     'USER_IS_BANNED': {
-        'he': 'המשתמש חסום \nאתה יכול לבטל את החסימה שלו על ידי שליחת הפקודה /unban',
-        'en': 'the user is ban\nYou can unban him by sending the /unban command'
+        'he': 'המשתמש חסום \nאתה יכול לבטל את החסימה שלו על ידי פתיחת הנושא (topic)',
+        'en': 'The user is blocked \nYou can unblock him by opening the topic'
     },
     'INFO_TOPIC': {
         'he': '**פרטים על המשתמש**: \n**שם:** {0}\n**שם משתמש: {1}'

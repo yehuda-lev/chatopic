@@ -47,35 +47,6 @@ def protect(_, msg: Message):
     filters_db.change_protect(tg_id=tg_id, is_protect=is_protect)
 
 
-def ban_users(c: Client, msg: Message):
-    """
-    in the admin want to ban/unban user from the bot
-    """
-
-    topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
-    tg_id = filters_db.get_tg_id_by_topic(topic_id=topic_id)
-
-    try:
-        if msg.command[0] == "ban":
-            filters_db.change_banned(tg_id=tg_id, is_banned=True)
-            msg.reply(text=resolve_msg(key='BAN'))
-            closed = True
-
-        else:
-            filters_db.change_banned(tg_id=tg_id, is_banned=False)
-            msg.reply(text=resolve_msg(key='UNBAN'))
-            closed = False
-        # close/open the topic
-        peer = c.resolve_peer(msg.chat.id)
-        c.invoke(functions.channels.EditForumTopic(
-            channel=raw_types.InputChannel(peer),
-            topic_id=topic_id, closed=closed
-        )
-        )
-    except BadRequest as e:
-        print(e)
-
-
 async def request_group(c: Client, msg: Message):
     """
     in the admin want to add group (sent command '/add_group') for the bot
@@ -173,7 +144,6 @@ async def baned_user_by_closed_topic(c: Client, update: raw_types.UpdateNewMessa
         text = resolve_msg(key='BAN')
     else:
         text = resolve_msg(key='UNBAN')
-    # text = f'the user banned= {banned}'
 
     await c.send_message(chat_id=int(f'-100{update.message.peer_id.channel_id}'),
                          reply_to_message_id=update.message.id, text=text)
