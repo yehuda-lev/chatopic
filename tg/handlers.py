@@ -1,5 +1,6 @@
 import pyrogram
 from pyrogram import handlers
+from pyrogram.enums import MessageEntityType
 
 from tg import filters as tg_filters
 from tg.broadcast import send_message, get_message_for_subscribe
@@ -33,8 +34,8 @@ HANDLERS = [
 
     handlers.MessageHandler(get_message_for_subscribe, pyrogram.filters.private
                             & pyrogram.filters.create(tg_filters.is_not_raw)
-                            & pyrogram.filters.create(tg_filters.is_admin)
                             & pyrogram.filters.command("send")
+                            & pyrogram.filters.create(tg_filters.is_admin)
                             | pyrogram.filters.create(tg_filters.is_force_reply)),
 
     handlers.CallbackQueryHandler(send_message,
@@ -46,8 +47,7 @@ HANDLERS = [
                                                           cbd.data == 'edit')),
 
     handlers.MessageHandler(forward_message,
-                            pyrogram.filters.create(lambda _, __, msg:
-                                                    False if msg.command else True)
+                            pyrogram.filters.create(tg_filters.is_command)
                             & pyrogram.filters.create(tg_filters.is_not_raw)
                             & pyrogram.filters.create(tg_filters.is_have_a_group)
                             & pyrogram.filters.create(tg_filters.is_topic)

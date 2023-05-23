@@ -1,4 +1,5 @@
 from pyrogram import Client
+from pyrogram.enums import MessageEntityType
 from pyrogram.raw import functions
 from pyrogram.raw import types as raw_types
 from pyrogram.types import Message, ForceReply
@@ -110,3 +111,13 @@ def is_force_reply(_, __, msg: Message) -> bool:
     except AttributeError:
         return False
     return False
+
+
+def is_command(_, __, msg: Message) -> bool:
+    if msg.command:
+        return False
+    else:
+        if msg.entities:
+            if msg.entities[0].type == MessageEntityType.BOT_COMMAND:
+                return False
+    return True
