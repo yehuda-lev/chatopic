@@ -125,7 +125,9 @@ async def create_group(c: Client, update: raw_types.UpdateNewMessage, users, cha
 
         # close/open topic > ban/unban user from the bot
         elif isinstance(update.message.action, MessageActionTopicEdit):
-            await baned_user_by_closed_topic(c, update)
+            # check if topic closed or just edited
+            if update.message.action.closed:
+                await baned_user_by_closed_topic(c, update)
 
     except AttributeError:
         return
