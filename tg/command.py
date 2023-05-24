@@ -77,12 +77,14 @@ def reply_markup(msg):
                         forum=True, bot_participant=True,
                         user_admin_rights=raw_types.ChatAdminRights(
                             add_admins=True, delete_messages=True,
-                            manage_topics=True, change_info=True
+                            manage_topics=True, change_info=True,
+                            pin_messages=True
                         ),
                         bot_admin_rights=raw_types.ChatAdminRights(
                             change_info=True,
                             delete_messages=True,
                             manage_topics=True,
+                            pin_messages=True
                         )
                     )
                 )
