@@ -27,12 +27,12 @@ dictionary = {
         'en': 'Done. \nThe user can copy the messages now\nTo change send the command /protect'
     },
     'BAN': {
-        'he': 'המשתמש נחסם \nלשחרור, אנא פתחו את הנושא (topic).',
-        'en': 'The user has been blocked \nTo release, please open the topic.'
+        'he': 'המשתמש נחסם \nלשחרור - פתחו את הנושא (topic).',
+        'en': 'The user has been blocked \nTo release - open the topic.'
     },
     'UNBAN': {
-        'he': 'המשתמש שוחרר \nלחסימה, אנא סגרו את הנושא (topic).',
-        'en': 'The user has been released \nfor blocking, please close the topic.'
+        'he': 'המשתמש שוחרר \nלחסימה - סגרו את הנושא (topic).',
+        'en': 'The user has been released \nfor blocking - close the topic.'
     },
     'REQUEST': {
         'he': 'אנא לחץ על הכפתור למטה כדי להוסיף את הבוט לקבוצה עם נושאים',
