@@ -2,7 +2,7 @@ from pyrogram import Client
 from pyrogram.enums import MessageEntityType
 from pyrogram.raw import functions
 from pyrogram.raw import types as raw_types
-from pyrogram.types import Message, ForceReply
+from pyrogram.types import Message, ForceReply, InlineKeyboardMarkup, InlineKeyboardButton
 
 from db import filters as db_filters
 from tg.strings import resolve_msg
@@ -67,7 +67,7 @@ async def create_topic(cli: Client, msg: Message):
 
     text = resolve_msg(key='INFO_TOPIC'). \
         format(f"[{name}](tg://user?id={msg.from_user.id})", f"{username}", f"{msg.from_user.id}",
-               f"{msg.from_user.id}")
+               f"{msg.from_user.id}", f"{msg.from_user.id}")
 
     # check if user have a photo
     photo = photo if (photo := msg.from_user.photo) else None
@@ -76,12 +76,17 @@ async def create_topic(cli: Client, msg: Message):
 
     if photo is None:  # if not have a photo > send text
         send = await cli.send_message(chat_id=chat_id, text=text,
-                                      reply_to_message_id=create.updates[1].message.id)
+                                      reply_to_message_id=create.updates[1].message.id,
+                                      reply_markup=InlineKeyboardMarkup([[
+                                          InlineKeyboardButton(text=name, user_id=msg.from_user.id)]]))
 
     else:  # if user have a photo > send photo + text
         async for photo in cli.get_chat_photos(msg.from_user.id, limit=1):
             send = await cli.send_photo(chat_id=chat_id, photo=photo.file_id,
-                                        caption=text, reply_to_message_id=create.updates[1].message.id)
+                                        caption=text, reply_to_message_id=create.updates[1].message.id,
+                                        reply_markup= InlineKeyboardMarkup([[
+                                            InlineKeyboardButton(text=name, user_id=msg.from_user.id)]])
+                                        )
 
     # pinned the message
     await cli.unpin_chat_message(chat_id=chat_id, message_id=send.id)
