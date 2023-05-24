@@ -21,7 +21,7 @@ async def forward_message(cli: Client, msg: Message):
         await forward_message_from_user(c=cli, msg=msg)
 
     elif db_filters.is_group_exists(group_id=msg.chat.id):  # the message sent by topic
-        await forward_message_from_topic(msg=msg)
+        await forward_message_from_topic(cli=cli, msg=msg)
 
     else:
         return
@@ -60,7 +60,7 @@ async def forward_message_from_user(c: Client, msg: Message):
         if msg.poll is not None or msg.venue is not None \
                 or msg.contact is not None or msg.location is not None:
 
-            await send_contact_or_poll_or_location(c, msg, int(group), reply)
+            await send_contact_or_poll_or_location(c, msg, int(group), reply, protect=None)
             return
 
         forward = await msg.copy(chat_id=int(group), reply_to_message_id=reply)
@@ -92,7 +92,7 @@ def get_reply_to_message_by_topic(msg: Message) -> int | None:
     return reply
 
 
-async def forward_message_from_topic(msg: Message):
+async def forward_message_from_topic(cli: Client, msg: Message):
     """the message sent in topic > forward message to user"""
 
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
@@ -101,6 +101,13 @@ async def forward_message_from_topic(msg: Message):
     reply = get_reply_to_message_by_topic(msg=msg)
 
     try:
+        if msg.poll is not None or msg.venue is not None \
+                or msg.contact is not None or msg.location is not None:
+
+            await send_contact_or_poll_or_location(c=cli, msg=msg, chat=tg_id,
+                                                   reply=reply, protect=is_protect)
+            return
+
         forward = await msg.copy(chat_id=tg_id, reply_to_message_id=reply,
                                  protect_content=is_protect)
         db_filters.create_message(tg_id_or_topic_id=topic_id, is_topic_id=True,
@@ -120,45 +127,56 @@ async def forward_message_from_topic(msg: Message):
         print(e)
 
 
-async def send_contact_or_poll_or_location(c: Client, msg: Message, group: int, reply: int | None):
+async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, reply: int | None, protect: bool | None):
     try:
         if msg.contact is not None:
             # Handle contact message
             await c.send_contact(
-                chat_id=group,
+                chat_id=chat,
                 phone_number=msg.contact.phone_number,
                 first_name=msg.contact.first_name,
                 last_name=msg.contact.last_name,
-                reply_to_message_id=reply
+                reply_to_message_id=reply,
+                protect_content=protect
             )
 
         elif msg.location is not None:
             # Handle location message
             await c.send_location(
-                chat_id=group,
+                chat_id=chat,
                 latitude=msg.location.latitude,
                 longitude=msg.location.longitude,
-                reply_to_message_id=reply
+                reply_to_message_id=reply,
+                protect_content=protect
             )
 
         elif msg.poll is not None:
             # Handle quiz message
             await c.send_poll(
-                chat_id=group,
+                chat_id=chat,
                 question=msg.poll.question,
                 options=[o.text for o in msg.poll.options],
-                reply_to_message_id=reply
+                reply_to_message_id=reply,
+                protect_content=protect
             )
 
         elif msg.venue is not None:
             # Handle location message
             await c.send_location(
-                chat_id=group,
+                chat_id=chat,
                 latitude=msg.venue.location.latitude,
                 longitude=msg.venue.location.longitude,
-                reply_to_message_id=reply
+                reply_to_message_id=reply,
+                protect_content=protect
             )
+    except InputUserDeactivated:
+        db_filters.change_active(tg_id=chat, active=False)
+
+    except UserIsBlocked:
+        db_filters.change_active(tg_id=chat, active=False)
+
+    except PeerIdInvalid:
+        db_filters.change_active(tg_id=chat, active=False)
 
     except BadRequest as e:
-        print("forward_message_from_user", e)
-        return
+        print(e)
