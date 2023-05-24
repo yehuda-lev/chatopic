@@ -142,7 +142,6 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, group: int, 
             )
 
         elif msg.poll is not None:
-            print('poll')
             # Handle quiz message
             await c.send_poll(
                 chat_id=group,
@@ -152,7 +151,6 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, group: int, 
             )
 
         elif msg.venue is not None:
-            print('venue')
             # Handle location message
             await c.send_location(
                 chat_id=group,
