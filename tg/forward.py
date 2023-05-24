@@ -57,9 +57,12 @@ async def forward_message_from_user(c: Client, msg: Message):
     reply = get_reply_to_message_by_user(msg=msg)
 
     try:
-        if msg.poll or msg.venue or msg.contact or msg.location:
-            send_contact_or_poll_or_location(c, msg, int(group), reply)
+        if msg.poll is not None or msg.venue is not None \
+                or msg.contact is not None or msg.location is not None:
+
+            await send_contact_or_poll_or_location(c, msg, int(group), reply)
             return
+
         forward = await msg.copy(chat_id=int(group), reply_to_message_id=reply)
         db_filters.create_message(tg_id_or_topic_id=tg_id, is_topic_id=False,
                                   user_msg_id=msg.id, topic_msg_id=forward.id)
@@ -117,50 +120,47 @@ async def forward_message_from_topic(msg: Message):
         print(e)
 
 
-def send_contact_or_poll_or_location(c: Client, msg: Message, group: int, reply: int | None):
-    pass
-    # try:
-    #     print(reply, group)
-    #     c.send_message(chat_id=group, text='hello', reply_to_message_id=reply)
-    #     c.send_message(chat_id=-1001943931755, text='hello', reply_to_message_id=None)
-    #     msg.copy(chat_id=group, reply_to_message_id=reply)
-    #     if msg.contact is not None:
-    #         print('contact')
-    #         # Handle contact message
-    #         c.send_contact(
-    #             chat_id=group,
-    #             phone_number=msg.contact.phone_number,
-    #             first_name=msg.contact.first_name,
-    #             last_name=msg.contact.last_name,
-    #             reply_to_message_id=reply
-    #         )
-    #     elif msg.location is not None:
-    #         print('location')
-    #         # Handle location message
-    #         c.send_location(
-    #             chat_id=group,
-    #             latitude=msg.location.latitude,
-    #             longitude=msg.location.longitude,
-    #             reply_to_message_id=reply
-    #         )
-    #     elif msg.poll is not None:
-    #         print('poll')
-    #         # Handle quiz message
-    #         c.send_poll(
-    #             chat_id=group,
-    #             question=msg.poll.question,
-    #             options=[o.text for o in msg.poll.options],
-    #             reply_to_message_id=reply
-    #         )
-    #     elif msg.venue is not None:
-    #         print('venue')
-    #         # Handle location message
-    #         c.send_location(
-    #             chat_id=group,
-    #             latitude=msg.venue.location.latitude,
-    #             longitude=msg.venue.location.longitude,
-    #             reply_to_message_id=reply
-    #         )
-    # except BadRequest as e:
-    #     print("forward_message_from_user", e)
-    #     return
+async def send_contact_or_poll_or_location(c: Client, msg: Message, group: int, reply: int | None):
+    try:
+        if msg.contact is not None:
+            # Handle contact message
+            await c.send_contact(
+                chat_id=group,
+                phone_number=msg.contact.phone_number,
+                first_name=msg.contact.first_name,
+                last_name=msg.contact.last_name,
+                reply_to_message_id=reply
+            )
+
+        elif msg.location is not None:
+            # Handle location message
+            await c.send_location(
+                chat_id=group,
+                latitude=msg.location.latitude,
+                longitude=msg.location.longitude,
+                reply_to_message_id=reply
+            )
+
+        elif msg.poll is not None:
+            print('poll')
+            # Handle quiz message
+            await c.send_poll(
+                chat_id=group,
+                question=msg.poll.question,
+                options=[o.text for o in msg.poll.options],
+                reply_to_message_id=reply
+            )
+
+        elif msg.venue is not None:
+            print('venue')
+            # Handle location message
+            await c.send_location(
+                chat_id=group,
+                latitude=msg.venue.location.latitude,
+                longitude=msg.venue.location.longitude,
+                reply_to_message_id=reply
+            )
+
+    except BadRequest as e:
+        print("forward_message_from_user", e)
+        return
