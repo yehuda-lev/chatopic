@@ -13,8 +13,11 @@ def is_banned(_, __, msg: Message):
     """
     filter to check if user is banned or not
     """
+    try:
+        tg_id = msg.from_user.id
+    except AttributeError:
+        return False
 
-    tg_id = msg.from_user.id
     if msg.chat.id == tg_id:
         if db_filters.get_is_banned_by_tg_id(tg_id=tg_id):
             return False
@@ -31,8 +34,11 @@ async def is_user_exists(_, c: Client, msg: Message):
     filter to check if user exists. if not exists >
     create topic for user and create topic in the DB
     """
+    try:
+        tg_id = msg.from_user.id
+    except AttributeError:
+        return True
 
-    tg_id = msg.from_user.id
     if db_filters.is_tg_id_exists(tg_id=tg_id):
         if db_filters.is_user_active(tg_id):
             return True
@@ -110,10 +116,13 @@ def is_topic_or_is_user(_, __, msg: Message) -> bool:
     """
     check if msg send by user or sent in topic (and topic exists) or of topic
     """
+    try:
+        tg_id = msg.from_user.id
+        if msg.chat.id == tg_id:  # chat_id is user
+            return True
 
-    tg_id = msg.from_user.id
-    if msg.chat.id == tg_id:  # chat_id is user
-        return True
+    except AttributeError:  # when the user send message from channel
+        pass
 
     if db_filters.is_group_exists(group_id=msg.chat.id):  # is my_group
         if not (msg.reply_to_top_message_id or msg.reply_to_message_id):  # not in topic
