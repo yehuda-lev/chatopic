@@ -62,11 +62,12 @@ async def create_topic(cli: Client, msg: Message):
         icon_color=None,
         icon_emoji_id=5312016608254762256,
         send_as=None
-        )
+    )
     )
 
-    text = resolve_msg(key='INFO_TOPIC').\
-        format(f"[{name}](tg://user?id={msg.from_user.id})", f"{username}", f"{msg.from_user.id}", f"{msg.from_user.id}")
+    text = resolve_msg(key='INFO_TOPIC'). \
+        format(f"[{name}](tg://user?id={msg.from_user.id})", f"{username}", f"{msg.from_user.id}",
+               f"{msg.from_user.id}")
 
     # check if user have a photo
     photo = photo if (photo := msg.from_user.photo) else None
@@ -74,13 +75,17 @@ async def create_topic(cli: Client, msg: Message):
     chat_id = int("-100" + str(create.updates[1].message.peer_id.channel_id))
 
     if photo is None:  # if not have a photo > send text
-        await cli.send_message(chat_id=chat_id, text=text,
-                               reply_to_message_id=create.updates[1].message.id)
+        send = await cli.send_message(chat_id=chat_id, text=text,
+                                      reply_to_message_id=create.updates[1].message.id)
 
     else:  # if user have a photo > send photo + text
         async for photo in cli.get_chat_photos(msg.from_user.id, limit=1):
-            await cli.send_photo(chat_id=chat_id, photo=photo.file_id,
-                                 caption=text, reply_to_message_id=create.updates[1].message.id)
+            send = await cli.send_photo(chat_id=chat_id, photo=photo.file_id,
+                                        caption=text, reply_to_message_id=create.updates[1].message.id)
+
+    # pinned the message
+    await cli.unpin_chat_message(chat_id=chat_id, message_id=send.id)
+    await cli.pin_chat_message(chat_id=chat_id, message_id=send.id)
 
     return create.updates[1].message
 
