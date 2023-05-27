@@ -1,6 +1,8 @@
+import time
+
 import pyrogram
 from pyrogram import Client
-from pyrogram.errors import (BadRequest, InputUserDeactivated, UserIsBlocked, PeerIdInvalid)
+from pyrogram.errors import (BadRequest, InputUserDeactivated, UserIsBlocked, PeerIdInvalid, FloodWait)
 from pyrogram.types import Message
 
 from db import filters as db_filters
@@ -66,6 +68,10 @@ async def forward_message_from_user(c: Client, msg: Message):
         forward = await msg.copy(chat_id=int(group), reply_to_message_id=reply)
         db_filters.create_message(tg_id_or_topic_id=tg_id, is_topic_id=False,
                                   user_msg_id=msg.id, topic_msg_id=forward.id)
+
+    except FloodWait as e:
+        time.sleep(e.value)
+
     except BadRequest as e:
         print("forward_message_from_user", e)
         return
@@ -112,6 +118,9 @@ async def forward_message_from_topic(cli: Client, msg: Message):
                                  protect_content=is_protect)
         db_filters.create_message(tg_id_or_topic_id=topic_id, is_topic_id=True,
                                   user_msg_id=forward.id, topic_msg_id=msg.id)
+
+    except FloodWait as e:
+        time.sleep(e.value)
 
     except (InputUserDeactivated, UserIsBlocked, PeerIdInvalid, BadRequest) as e:
         db_filters.change_active(tg_id=tg_id, active=False)
@@ -160,6 +169,10 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
                 reply_to_message_id=reply,
                 protect_content=protect
             )
+
+    except FloodWait as e:
+        time.sleep(e.value)
+
     except (InputUserDeactivated, UserIsBlocked, PeerIdInvalid, BadRequest) as e:
         db_filters.change_active(tg_id=chat, active=False)
         await msg.reply(text=e.NAME)
