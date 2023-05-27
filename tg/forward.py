@@ -113,18 +113,9 @@ async def forward_message_from_topic(cli: Client, msg: Message):
         db_filters.create_message(tg_id_or_topic_id=topic_id, is_topic_id=True,
                                   user_msg_id=forward.id, topic_msg_id=msg.id)
 
-    except InputUserDeactivated:
+    except (InputUserDeactivated, UserIsBlocked, PeerIdInvalid, BadRequest) as e:
         db_filters.change_active(tg_id=tg_id, active=False)
-
-    except UserIsBlocked:
-        db_filters.change_active(tg_id=tg_id, active=False)
-
-    except PeerIdInvalid:
-        db_filters.change_active(tg_id=tg_id, active=False)
-
-    except BadRequest as e:
-        db_filters.change_active(tg_id=tg_id, active=False)
-        print(e)
+        await msg.reply(text=e.NAME)
 
 
 async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, reply: int | None, protect: bool | None):
@@ -169,14 +160,7 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
                 reply_to_message_id=reply,
                 protect_content=protect
             )
-    except InputUserDeactivated:
+    except (InputUserDeactivated, UserIsBlocked, PeerIdInvalid, BadRequest) as e:
         db_filters.change_active(tg_id=chat, active=False)
+        await msg.reply(text=e.NAME)
 
-    except UserIsBlocked:
-        db_filters.change_active(tg_id=chat, active=False)
-
-    except PeerIdInvalid:
-        db_filters.change_active(tg_id=chat, active=False)
-
-    except BadRequest as e:
-        print(e)
