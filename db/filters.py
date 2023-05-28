@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pony.orm import db_session, select
+from pony.orm import db_session, select, delete
 from db.tables import TgGroup, TgTopic, TgUser, Message, Admin
 
 
@@ -172,3 +172,10 @@ def change_active(tg_id: int, active: bool):
 def get_all_users() -> list[int]:
     return select(int(i.id) for i in TgUser if not i.ban and i.active)[:]
 
+
+@db_session
+def del_all():
+    # Warning ⚠
+    delete(u for u in TgUser)
+    delete(g for g in TgGroup)
+    print('delete all ⚠')
