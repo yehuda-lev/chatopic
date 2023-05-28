@@ -1,6 +1,6 @@
 from pyrogram import Client
 from pyrogram.enums import MessageEntityType
-from pyrogram.errors import ButtonUserPrivacyRestricted
+from pyrogram.errors import ButtonUserPrivacyRestricted, ChatWriteForbidden, Forbidden, ChatAdminRequired
 from pyrogram.raw import functions
 from pyrogram.raw import types as raw_types
 from pyrogram.types import Message, ForceReply, InlineKeyboardMarkup, InlineKeyboardButton
@@ -47,6 +47,9 @@ async def is_user_exists(_, c: Client, msg: Message):
     else:
         name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
         create = await create_topic(cli=c, msg=msg)
+        if create is False:
+            return False
+
         group_id, topic_id = int("-100" + str(create.peer_id.channel_id)), create.id
         db_filters.create_user(tg_id=tg_id, group_id=group_id, topic_id=topic_id, name=name)
         return True
@@ -60,17 +63,21 @@ async def create_topic(cli: Client, msg: Message):
     name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
     username = "@" + str(username) if (username := msg.from_user.username) else "❌"
 
-    # create topic
-    peer = await cli.resolve_peer(int(db_filters.get_my_group()))
-    create = await cli.invoke(functions.channels.CreateForumTopic(
-        channel=raw_types.InputChannel(channel_id=peer.channel_id, access_hash=peer.access_hash),
-        title=name,
-        random_id=1000000,
-        icon_color=None,
-        icon_emoji_id=5312016608254762256,
-        send_as=None
-    )
-    )
+    try:
+        # create topic
+        peer = await cli.resolve_peer(int(db_filters.get_my_group()))
+        create = await cli.invoke(functions.channels.CreateForumTopic(
+            channel=raw_types.InputChannel(channel_id=peer.channel_id, access_hash=peer.access_hash),
+            title=name,
+            random_id=1000000,
+            icon_color=None,
+            icon_emoji_id=5312016608254762256,
+            send_as=None
+            )
+        )
+    except (ChatWriteForbidden, Forbidden) as e:
+        print(e)
+        return False
 
     text = resolve_msg(key='INFO_TOPIC'). \
         format(f"[{name}](tg://user?id={msg.from_user.id})", f"{username}", f"{msg.from_user.id}",
@@ -106,8 +113,11 @@ async def create_topic(cli: Client, msg: Message):
                                             reply_to_message_id=create.updates[1].message.id)
 
     # pinned the message
-    await cli.unpin_chat_message(chat_id=chat_id, message_id=send.id)
-    await cli.pin_chat_message(chat_id=chat_id, message_id=send.id)
+    try:
+        await cli.unpin_chat_message(chat_id=chat_id, message_id=send.id)
+        await cli.pin_chat_message(chat_id=chat_id, message_id=send.id)
+    except ChatAdminRequired:
+        return False
 
     return create.updates[1].message
 
