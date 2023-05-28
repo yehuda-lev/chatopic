@@ -3,7 +3,8 @@ from pyrogram.errors import BadRequest, Forbidden, SlowmodeWait
 from pyrogram.raw import functions
 from pyrogram.raw import types as raw_types
 from pyrogram.raw.types import MessageService, MessageActionTopicEdit, MessageActionRequestedPeer
-from pyrogram.types import Message, ReplyKeyboardRemove
+from pyrogram.types import (Message, ReplyKeyboardRemove, InlineKeyboardMarkup,
+                            InlineKeyboardButton, CallbackQuery)
 
 from db import filters as filters_db
 from tg.strings import resolve_msg
@@ -157,3 +158,37 @@ async def baned_user_by_closed_topic(c: Client, update: raw_types.UpdateNewMessa
 
     await c.send_message(chat_id=int(f'-100{update.message.peer_id.channel_id}'),
                          reply_to_message_id=update.message.id, text=text)
+
+
+def ask_delete_group(_, msg: Message):
+    """
+    when the admin want to delete the group
+    """
+
+    msg.reply(text='**⚠ do you want to delete the group? ⚠**', reply_to_message_id=msg.id,
+              reply_markup=InlineKeyboardMarkup([
+                  [InlineKeyboardButton(text='⚠ YES ⚠', callback_data='delete:yes')],
+                  [InlineKeyboardButton(text='NO', callback_data='delete:no')]
+              ]))
+
+
+def delete_group(c: Client, cbd: CallbackQuery):
+    """
+    when the admin want to delete the group
+    """
+
+    data = cbd.data.split(':')[1]
+
+    if data == 'no':
+        cbd.answer(text='OK, the group will not deleted', show_alert=True)
+        c.delete_messages(chat_id=cbd.from_user.id, message_ids=cbd.message.id)
+        c.delete_messages(chat_id=cbd.from_user.id, message_ids=cbd.message.reply_to_message.id)
+        return
+
+    else:
+        cbd.answer(text='OK, the group will deleted now !', show_alert=True)
+        c.delete_messages(chat_id=cbd.from_user.id, message_ids=cbd.message.id)
+        c.delete_messages(chat_id=cbd.from_user.id, message_ids=cbd.message.reply_to_message.id)
+
+    # delete the group and all message
+    filters_db.del_all()
