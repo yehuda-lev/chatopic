@@ -1,5 +1,5 @@
 from pyrogram import Client
-from pyrogram.errors import BadRequest
+from pyrogram.errors import BadRequest, Forbidden, SlowmodeWait
 from pyrogram.raw import functions
 from pyrogram.raw import types as raw_types
 from pyrogram.raw.types import MessageService, MessageActionTopicEdit, MessageActionRequestedPeer
@@ -25,8 +25,10 @@ def get_info_command(_, msg: Message):
     """
     send information what the user can do in topic.
     """
-
-    msg.reply(text=resolve_msg(key='INFO'))
+    try:
+        msg.reply(text=resolve_msg(key='INFO'))
+    except (Forbidden, SlowmodeWait) as e:
+        print(e)
 
 
 def protect(_, msg: Message):
@@ -37,12 +39,15 @@ def protect(_, msg: Message):
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
     tg_id = filters_db.get_tg_id_by_topic(topic_id=topic_id)
 
-    if msg.command[0] == "protect":
-        is_protect = True
-        msg.reply(resolve_msg('PROTECT'))
-    else:
-        is_protect = False
-        msg.reply(resolve_msg('UNPROTECT'))
+    try:
+        if msg.command[0] == "protect":
+            is_protect = True
+            msg.reply(resolve_msg('PROTECT'))
+        else:
+            is_protect = False
+            msg.reply(resolve_msg('UNPROTECT'))
+    except (Forbidden, SlowmodeWait) as e:
+        print(e)
 
     filters_db.change_protect(tg_id=tg_id, is_protect=is_protect)
 
@@ -59,7 +64,8 @@ async def request_group(c: Client, msg: Message):
         functions.messages.SendMessage(peer=peer,
                                        message=resolve_msg(key='REQUEST'),
                                        random_id=c.rnd_id(),
-                                       reply_markup=reply_markup(msg))
+                                       reply_markup=reply_markup(msg)
+                                       )
     )
 
 
