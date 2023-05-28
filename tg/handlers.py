@@ -4,7 +4,7 @@ from pyrogram import handlers
 from tg import filters as tg_filters
 from tg.broadcast import send_message, get_message_for_subscribe
 from tg.command import (get_info_command, protect, request_group,
-                        create_group, send_welcome)
+                        create_group, send_welcome, ask_delete_group, delete_group)
 from tg.delete import delete
 from tg.edit import edited_message, answer_the_message_is_edited
 from tg.forward import forward_message
@@ -36,6 +36,15 @@ HANDLERS = [
                             & pyrogram.filters.command("send")
                             & pyrogram.filters.create(tg_filters.is_admin)
                             | pyrogram.filters.create(tg_filters.is_force_reply)),
+
+    handlers.MessageHandler(ask_delete_group, pyrogram.filters.private
+                            & pyrogram.filters.create(tg_filters.is_not_raw)
+                            & pyrogram.filters.command('delete_group')
+                            & pyrogram.filters.create(tg_filters.is_admin)),
+
+    handlers.CallbackQueryHandler(delete_group,
+                                  pyrogram.filters.create(lambda _, __, cbd:
+                                                          cbd.data.startswith('delete'))),
 
     handlers.CallbackQueryHandler(send_message,
                                   pyrogram.filters.create(lambda _, __, cbd:
