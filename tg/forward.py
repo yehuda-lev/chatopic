@@ -2,7 +2,8 @@ import time
 
 import pyrogram
 from pyrogram import Client
-from pyrogram.errors import (BadRequest, InputUserDeactivated, UserIsBlocked, PeerIdInvalid, FloodWait)
+from pyrogram.errors import (BadRequest, InputUserDeactivated, UserIsBlocked, PeerIdInvalid, FloodWait, ChannelPrivate,
+                             ChatWriteForbidden, ChatAdminRequired, Forbidden, ChannelInvalid, SlowmodeWait)
 from pyrogram.types import Message
 
 from db import filters as db_filters
@@ -69,10 +70,11 @@ async def forward_message_from_user(c: Client, msg: Message):
         db_filters.create_message(tg_id_or_topic_id=tg_id, is_topic_id=False,
                                   user_msg_id=msg.id, topic_msg_id=forward.id)
 
-    except FloodWait as e:
+    except (FloodWait, SlowmodeWait) as e:
         time.sleep(e.value)
 
-    except BadRequest as e:
+    except (ChannelPrivate, ChatWriteForbidden, ChatAdminRequired,
+            ChannelInvalid, Forbidden, BadRequest) as e:
         print("forward_message_from_user", e)
         return
 
@@ -119,7 +121,7 @@ async def forward_message_from_topic(cli: Client, msg: Message):
         db_filters.create_message(tg_id_or_topic_id=topic_id, is_topic_id=True,
                                   user_msg_id=forward.id, topic_msg_id=msg.id)
 
-    except FloodWait as e:
+    except (FloodWait, SlowmodeWait) as e:
         time.sleep(e.value)
 
     except (InputUserDeactivated, UserIsBlocked, PeerIdInvalid, BadRequest) as e:
@@ -170,10 +172,15 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
                 protect_content=protect
             )
 
-    except FloodWait as e:
+    except (FloodWait, SlowmodeWait) as e:
         time.sleep(e.value)
 
-    except (InputUserDeactivated, UserIsBlocked, PeerIdInvalid, BadRequest) as e:
+    except (InputUserDeactivated, UserIsBlocked, PeerIdInvalid) as e:
         db_filters.change_active(tg_id=chat, active=False)
         await msg.reply(text=e.NAME)
+
+    except (ChannelPrivate, ChatWriteForbidden, ChatAdminRequired,
+            ChannelInvalid, Forbidden, BadRequest) as e:
+        print("forward_message_from_user", e)
+        return
 
