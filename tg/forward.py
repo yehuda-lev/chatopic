@@ -126,7 +126,8 @@ async def forward_message_from_topic(cli: Client, msg: Message):
 
     except (InputUserDeactivated, UserIsBlocked, PeerIdInvalid, BadRequest) as e:
         db_filters.change_active(tg_id=tg_id, active=False)
-        await msg.reply(text=e.NAME)
+        print(f'forward_message_from_topic {e}')
+        await msg.reply(text=e.MESSAGE)
 
 
 async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, reply: int | None, protect: bool | None):
@@ -177,7 +178,8 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
 
     except (InputUserDeactivated, UserIsBlocked, PeerIdInvalid) as e:
         db_filters.change_active(tg_id=chat, active=False)
-        await msg.reply(text=e.NAME)
+        print(f'forward_message_from_topic {e}')
+        await msg.reply(text=e.MESSAGE)
 
     except (ChannelPrivate, ChatWriteForbidden, ChatAdminRequired,
             ChannelInvalid, Forbidden, BadRequest) as e:
