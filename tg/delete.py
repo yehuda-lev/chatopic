@@ -6,6 +6,7 @@ from db import filters as db_filters
 
 
 def delete_message(c, msg):
+    #  just if msg to delete send with the bot !
 
     if msg[0].chat is not None:  # check if msg delete in chat user or group
         group = msg[0].chat.id
