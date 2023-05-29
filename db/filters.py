@@ -150,6 +150,20 @@ def get_user_by_topic_msg_id(topic_id: int, msg_id: int) -> Message:
     return Message.get(topic_id=topic_id, topic_msg_id=msg_id)
 
 
+# new
+@db_session
+def get_user_by_msg_id(msg_id: int) -> Message:
+    return Message.get(topic_msg_id=msg_id)
+
+
+# new
+def get_user_msg_id_by_msg_id(msg_id: int) -> Optional[int]:
+    user = get_user_by_msg_id(msg_id=msg_id)
+    if user is None:
+        return None
+    return user.user_msg_id
+
+
 def get_user_msg_id_by_topic_msg_id(topic_id: int, msg_id: int) -> Optional[int]:
     user = get_user_by_topic_msg_id(topic_id=topic_id, msg_id=msg_id)
     if user is None:
