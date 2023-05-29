@@ -4,7 +4,7 @@ from pyrogram.raw import functions
 from pyrogram.raw import types as raw_types
 from pyrogram.raw.types import MessageService, MessageActionTopicEdit, MessageActionRequestedPeer
 from pyrogram.types import (Message, ReplyKeyboardRemove, InlineKeyboardMarkup,
-                            InlineKeyboardButton, CallbackQuery)
+                            InlineKeyboardButton, CallbackQuery, BotCommand, BotCommandScopeChat)
 
 from db import filters as filters_db
 from tg.strings import resolve_msg
@@ -131,6 +131,7 @@ async def create_group(c: Client, update: raw_types.UpdateNewMessage, users, cha
                 await c.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
                                      text=text,
                                      reply_markup=ReplyKeyboardRemove(selective=True))
+                await set_commands_for_group(c, group_id)
 
         # close/open topic > ban/unban user from the bot
         elif isinstance(update.message.action, MessageActionTopicEdit):
@@ -140,6 +141,18 @@ async def create_group(c: Client, update: raw_types.UpdateNewMessage, users, cha
 
     except AttributeError:
         return
+
+
+async def set_commands_for_group(c: Client, group_id: int):
+    await c.set_bot_commands(
+        commands=[
+            BotCommand(command='info', description=resolve_msg('COMMAND_INFO')),
+            BotCommand(command='delete', description=resolve_msg('COMMAND_DELETE')),
+            BotCommand(command='protect', description=resolve_msg('COMMAND_PROTECT')),
+            BotCommand(command='unprotect', description=resolve_msg('COMMAND_UNPROTECT')),
+        ],
+        scope=BotCommandScopeChat(chat_id=group_id)
+    )
 
 
 async def baned_user_by_closed_topic(c: Client, update: raw_types.UpdateNewMessage):

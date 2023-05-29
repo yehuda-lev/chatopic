@@ -81,9 +81,21 @@ dictionary = {
         'he': 'נערך',
         'en': 'Edited'
     },
-    'EDIT_CBD': {
-        'he': 'הודעה זו נערכה !',
-        'en': 'This message has been edited!'
+    'COMMAND_INFO': {
+        'he': 'מידע על הפעולות בצאט',
+        'en': 'Info about the actions in the chat'
+    },
+    'COMMAND_DELETE': {
+        'he': 'מחיקת הודעה בצאט',
+        'en': 'delete message in chat'
+    },
+    'COMMAND_PROTECT': {
+        'he': 'לחסום העתקת הודעות',
+        'en': 'Block copying of messages'
+    },
+    'COMMAND_UNPROTECT': {
+        'he': 'לאפשר העתקת הודעות',
+        'en': 'Allow copying of messages'
     }
 }
 
