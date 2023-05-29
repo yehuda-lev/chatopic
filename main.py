@@ -2,7 +2,7 @@ import os
 from pyrogram import Client
 from dotenv import load_dotenv
 from pyrogram.errors import PeerIdInvalid
-from pyrogram.types import BotCommand, BotCommandScopeDefault, BotCommandScopeChat
+from pyrogram.types import BotCommand, BotCommandScopeChat
 
 from db import filters as db_filters
 from tg import handlers
