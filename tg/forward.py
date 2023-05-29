@@ -134,7 +134,7 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
     try:
         if msg.contact is not None:
             # Handle contact message
-            await c.send_contact(
+            forward = await c.send_contact(
                 chat_id=chat,
                 phone_number=msg.contact.phone_number,
                 first_name=msg.contact.first_name,
@@ -145,7 +145,7 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
 
         elif msg.location is not None:
             # Handle location message
-            await c.send_location(
+            forward = await c.send_location(
                 chat_id=chat,
                 latitude=msg.location.latitude,
                 longitude=msg.location.longitude,
@@ -155,7 +155,7 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
 
         elif msg.poll is not None:
             # Handle quiz message
-            await c.send_poll(
+            forward = await c.send_poll(
                 chat_id=chat,
                 question=msg.poll.question,
                 options=[o.text for o in msg.poll.options],
@@ -163,15 +163,18 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
                 protect_content=protect
             )
 
-        elif msg.venue is not None:
+        else: # venue
             # Handle location message
-            await c.send_location(
+            forward = await c.send_location(
                 chat_id=chat,
                 latitude=msg.venue.location.latitude,
                 longitude=msg.venue.location.longitude,
                 reply_to_message_id=reply,
                 protect_content=protect
             )
+
+        db_filters.create_message(tg_id_or_topic_id=chat, is_topic_id=False,
+                                  user_msg_id=msg.id, topic_msg_id=forward.id)
 
     except (FloodWait, SlowmodeWait) as e:
         time.sleep(e.value)
