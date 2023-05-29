@@ -5,6 +5,7 @@ from pyrogram import Client
 from pyrogram.errors import (BadRequest, InputUserDeactivated, UserIsBlocked, PeerIdInvalid, FloodWait, ChannelPrivate,
                              ChatWriteForbidden, ChatAdminRequired, Forbidden, ChannelInvalid, SlowmodeWait)
 from pyrogram.types import Message
+from pyrogram.raw.functions import messages as raw_func
 
 from db import filters as db_filters
 
@@ -57,18 +58,37 @@ async def forward_message_from_user(c: Client, msg: Message):
 
     tg_id = msg.from_user.id
     group = db_filters.get_group_by_tg_id(tg_id=tg_id)
-    reply = get_reply_to_message_by_user(msg=msg)
 
     try:
-        if msg.poll is not None or msg.venue is not None \
-                or msg.contact is not None or msg.location is not None:
+        # if msg forward with credit > forward to topic with credit
+        if msg.forward_from is not None or msg.forward_from_chat is not None or \
+                msg.forward_sender_name is not None:
 
-            await send_contact_or_poll_or_location(c, msg, int(group), reply, protect=None)
-            return
+            topic = db_filters.get_topic_id_by_tg_id(tg_id=tg_id)
+            peer_user = await c.resolve_peer(msg.from_user.id)
+            peer_group = await c.resolve_peer(group)
+            # forward message with credit
+            await c.invoke(
+                raw_func.ForwardMessages(from_peer=peer_user,
+                                         random_id=[c.rnd_id()],
+                                         drop_author=False,
+                                         id=[msg.id],
+                                         to_peer=peer_group,
+                                         top_msg_id=topic
+                                         )
+            )
 
-        forward = await msg.copy(chat_id=int(group), reply_to_message_id=reply)
-        db_filters.create_message(tg_id_or_topic_id=tg_id, is_topic_id=False,
-                                  user_msg_id=msg.id, topic_msg_id=forward.id)
+        else:
+            reply = get_reply_to_message_by_user(msg=msg)
+
+            if msg.poll is not None or msg.venue is not None \
+                    or msg.contact is not None or msg.location is not None:
+                await send_contact_or_poll_or_location(c, msg, int(group), reply, protect=None)
+                return
+
+            forward = await msg.copy(chat_id=int(group), reply_to_message_id=reply)
+            db_filters.create_message(tg_id_or_topic_id=tg_id, is_topic_id=False,
+                                      user_msg_id=msg.id, topic_msg_id=forward.id)
 
     except (FloodWait, SlowmodeWait) as e:
         time.sleep(e.value)
@@ -111,7 +131,6 @@ async def forward_message_from_topic(cli: Client, msg: Message):
     try:
         if msg.poll is not None or msg.venue is not None \
                 or msg.contact is not None or msg.location is not None:
-
             await send_contact_or_poll_or_location(c=cli, msg=msg, chat=tg_id,
                                                    reply=reply, protect=is_protect)
             return
@@ -163,7 +182,7 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
                 protect_content=protect
             )
 
-        else: # venue
+        else:  # venue
             # Handle location message
             forward = await c.send_location(
                 chat_id=chat,
@@ -188,4 +207,3 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
             ChannelInvalid, Forbidden, BadRequest) as e:
         print("forward_message_from_user", e)
         return
-
