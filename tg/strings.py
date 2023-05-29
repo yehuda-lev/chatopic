@@ -1,4 +1,9 @@
-DEFAULT_LANG = 'he'
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DEFAULT_LANG = os.environ['DEFAULT_LANGUAGE'].lower()
 
 dictionary = {
     'start': {
