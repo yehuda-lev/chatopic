@@ -4,7 +4,6 @@ from pyrogram import Client
 from pyrogram.enums import MessageEntityType
 from pyrogram.errors import ButtonUserPrivacyRestricted, ChatWriteForbidden, Forbidden, ChatAdminRequired, FloodWait
 from pyrogram.raw import functions
-from pyrogram.raw import types as raw_types
 from pyrogram.types import Message, ForceReply, InlineKeyboardMarkup, InlineKeyboardButton
 
 from db import filters as db_filters
@@ -69,7 +68,7 @@ async def create_topic(cli: Client, msg: Message):
         # create topic
         peer = await cli.resolve_peer(int(db_filters.get_my_group()))
         create = await cli.invoke(functions.channels.CreateForumTopic(
-            channel=raw_types.InputChannel(channel_id=peer.channel_id, access_hash=peer.access_hash),
+            channel=peer,
             title=name,
             random_id=1000000,
             icon_color=None,
