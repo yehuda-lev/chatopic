@@ -5,7 +5,7 @@ from tg import filters as tg_filters
 from tg.broadcast import send_message, get_message_for_subscribe
 from tg.command import (get_info_command, protect, request_group,
                         create_group, send_welcome, ask_delete_group, delete_group)
-from tg.delete import delete
+from tg.delete import delete, delete_message
 from tg.edit import edited_message, answer_the_message_is_edited
 from tg.forward import forward_message
 
@@ -66,6 +66,8 @@ HANDLERS = [
     handlers.EditedMessageHandler(edited_message, pyrogram.filters.create(tg_filters.is_have_a_group)
                                   & pyrogram.filters.create(tg_filters.is_topic_or_is_user)
                                   & pyrogram.filters.create(tg_filters.is_banned)),
+
+    handlers.DeletedMessagesHandler(delete_message),
 
     handlers.RawUpdateHandler(create_group)
 ]
