@@ -101,6 +101,18 @@ dictionary = {
     'COMMAND_UNPROTECT': {
         'he': 'לאפשר העתקת הודעות',
         'en': 'Allow copying of messages'
+    },
+    'COMMAND_ADD_GROUP': {
+        'he': 'הוספת קבוצה',
+        'en': 'Added a group'
+    },
+    'COMMAND_DELETE_GROUP': {
+        'he': '⚠ מחיקת הקבוצה ⚠',
+        'en': '⚠ delete the group ⚠'
+    },
+    'COMMAND_SEND': {
+        'he': 'שליחת הודעה למנויים',
+        'en': 'send message for subscribe'
     }
 }
 
