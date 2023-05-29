@@ -123,6 +123,8 @@ def get_tg_id_by_topic(topic_id: int) -> Optional[int]:
     return user.id
 
 
+
+
 @db_session
 def create_message(tg_id_or_topic_id: int, is_topic_id: bool, user_msg_id: int, topic_msg_id: int):
     if is_topic_id:
@@ -134,11 +136,19 @@ def create_message(tg_id_or_topic_id: int, is_topic_id: bool, user_msg_id: int, 
 
 @db_session
 def get_user_by_user_msg_id(tg_id: int, msg_id: int) -> Message:
+    """
+    tg_id + msg_id > message
+    """
+
     return Message.get(tg_id=str(tg_id), user_msg_id=msg_id)
 
 
 @db_session
 def get_topic_msg_id_by_user_msg_id(tg_id: int, msg_id: int) -> Optional[int]:
+    """
+    tg_id + msg_id > topic.msg_id
+    """
+
     user = get_user_by_user_msg_id(tg_id=tg_id, msg_id=msg_id)
     if user is None:
         return None
@@ -147,28 +157,33 @@ def get_topic_msg_id_by_user_msg_id(tg_id: int, msg_id: int) -> Optional[int]:
 
 @db_session
 def get_user_by_topic_msg_id(topic_id: int, msg_id: int) -> Message:
+    """
+    topic + msg_id > message
+    """
+
     return Message.get(topic_id=topic_id, topic_msg_id=msg_id)
 
 
-# new
-@db_session
-def get_user_by_msg_id(msg_id: int) -> Message:
-    return Message.get(topic_msg_id=msg_id)
-
-
-# new
-def get_user_msg_id_by_msg_id(msg_id: int) -> Optional[int]:
-    user = get_user_by_msg_id(msg_id=msg_id)
-    if user is None:
-        return None
-    return user.user_msg_id
-
-
 def get_user_msg_id_by_topic_msg_id(topic_id: int, msg_id: int) -> Optional[int]:
+    """
+    topic_id + msg_id > tg.msg_id:
+    """
+
     user = get_user_by_topic_msg_id(topic_id=topic_id, msg_id=msg_id)
     if user is None:
         return None
     return user.user_msg_id
+
+
+# TODO
+# new
+@db_session
+def get_user_by_topic_msg_id2(msg_id: int) -> Message:
+    """
+    msg_id (topic) > message
+    """
+
+    return Message.get(topic_msg_id=msg_id)
 
 
 @db_session
