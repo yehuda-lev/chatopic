@@ -86,6 +86,10 @@ dictionary = {
         'he': 'נערך',
         'en': 'Edited'
     },
+    'EDIT_CBD': {
+            'he': 'הודעה זו נערכה !',
+            'en': 'This message has been edited!'
+    },
     'COMMAND_INFO': {
         'he': 'מידע על הפעולות בצאט',
         'en': 'Info about the actions in the chat'
