@@ -108,10 +108,10 @@ def get_reply_to_message_by_topic(msg: Message) -> int | None:
     if msg.reply_to_message:
         is_reply = db_filters.get_user_by_topic_msg_id(
             topic_id=topic_id,
-            msg_id=msg.reply_to_message.id).user_msg_id
+            msg_id=msg.reply_to_message.id)
 
         if is_reply is not None:
-            reply = is_reply
+            reply = is_reply.user_msg_id
         else:
             reply = None
     else:
