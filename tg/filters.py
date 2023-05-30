@@ -41,6 +41,9 @@ async def is_user_exists(_, c: Client, msg: Message):
     except AttributeError:
         return True
 
+    if tg_id != msg.chat.id:
+        return True
+
     if db_filters.is_tg_id_exists(tg_id=tg_id):
         if db_filters.is_user_active(tg_id):
             return True
