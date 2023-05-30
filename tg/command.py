@@ -38,7 +38,7 @@ def protect(_, msg: Message):
     """
 
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
-    tg_id = filters_db.get_tg_id_by_topic(topic_id=topic_id)
+    tg_id = filters_db.get_user_by_topic_id(topic_id=topic_id).id
 
     try:
         if msg.command[0] == "protect":
@@ -47,11 +47,11 @@ def protect(_, msg: Message):
         else:
             is_protect = False
             msg.reply(resolve_msg('UNPROTECT'))
+
+        filters_db.change_protect(tg_id=tg_id, is_protect=is_protect)
+
     except (Forbidden, SlowmodeWait) as e:
         print(e)
-
-    filters_db.change_protect(tg_id=tg_id, is_protect=is_protect)
-
 
 async def request_group(c: Client, msg: Message):
     """
@@ -160,7 +160,7 @@ async def baned_user_by_closed_topic(c: Client, update: raw_types.UpdateNewMessa
     if topic is closed or opened > ban or unban the user
     """
 
-    tg_id = filters_db.get_tg_id_by_topic(update.message.reply_to.reply_to_msg_id)
+    tg_id = filters_db.get_user_by_topic_id(update.message.reply_to.reply_to_msg_id).id
     banned = update.message.action.closed
     filters_db.change_banned(tg_id=tg_id, is_banned=banned)
 

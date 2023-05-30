@@ -31,7 +31,8 @@ async def edit_message_by_user(cli: Client, msg: types.Message):
     """
 
     tg_id = msg.from_user.id
-    chat_id = filters_db.get_group_by_tg_id(tg_id=tg_id)
+    chat_id = filters_db.get_user_by_tg_id(tg_id=tg_id).group.id
+
     msg_id = filters_db.get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg.id)
     if msg_id is None:
         return

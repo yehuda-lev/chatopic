@@ -49,7 +49,7 @@ def delete(c: Client, msg: Message):
         try:
             if reply:
                 topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
-                tg_id = db_filters.get_tg_id_by_topic(topic_id=topic_id)
+                tg_id = int(db_filters.get_user_by_topic_id(topic_id=topic_id).id)
                 c.delete_messages(chat_id=tg_id, message_ids=reply)
                 c.delete_messages(chat_id=msg.chat.id, message_ids=msg.reply_to_message.id)
                 c.delete_messages(chat_id=msg.chat.id, message_ids=msg.id)

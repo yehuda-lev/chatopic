@@ -68,36 +68,10 @@ def get_user_by_tg_id(tg_id: int) -> TgUser:
     return TgUser.get(id=str(tg_id))
 
 
-def get_group_by_tg_id(tg_id: int) -> Optional[int]:
-    user = get_user_by_tg_id(tg_id=tg_id)
-    if user is None:
-        return None
-    return user.group.id
-
-
-def get_topic_id_by_tg_id(tg_id: int) -> Optional[int]:
-    user = get_user_by_tg_id(tg_id=tg_id)
-    if user is None:
-        return None
-    return user.topic.id
-
-
-def get_is_protect_by_topic_id(topic_id: int) -> bool:
-    return get_user_by_topic_id(topic_id=topic_id).protect
-
-
 @db_session
 def change_protect(tg_id: int, is_protect: bool):
     user = TgUser.get(id=str(tg_id))
     user.protect = is_protect
-
-
-def get_is_banned_by_tg_id(tg_id: int) -> bool:
-    return get_user_by_tg_id(tg_id=tg_id).ban
-
-
-def get_is_banned_by_topic_id(topic_id: int) -> bool:
-    return get_user_by_topic_id(topic_id=topic_id).ban
 
 
 @db_session
@@ -116,21 +90,12 @@ def get_user_by_topic_id(topic_id: int) -> TgUser:
     return get_topic_by_topic_id(topic_id).user
 
 
-def get_tg_id_by_topic(topic_id: int) -> Optional[int]:
-    user = get_user_by_topic_id(topic_id=topic_id)
-    if user is None:
-        return None
-    return user.id
-
-
-
-
 @db_session
 def create_message(tg_id_or_topic_id: int, is_topic_id: bool, user_msg_id: int, topic_msg_id: int):
     if is_topic_id:
-        topic_id, tg_id = tg_id_or_topic_id, get_tg_id_by_topic(topic_id=tg_id_or_topic_id)
+        topic_id, tg_id = tg_id_or_topic_id, get_user_by_topic_id(topic_id=tg_id_or_topic_id).id
     else:
-        tg_id, topic_id = tg_id_or_topic_id, get_topic_id_by_tg_id(tg_id=tg_id_or_topic_id)
+        tg_id, topic_id = tg_id_or_topic_id, get_user_by_tg_id(tg_id=tg_id_or_topic_id).topic.id
     return Message(tg_id=str(tg_id), topic_id=topic_id, user_msg_id=user_msg_id, topic_msg_id=topic_msg_id)
 
 
@@ -164,18 +129,6 @@ def get_user_by_topic_msg_id(topic_id: int, msg_id: int) -> Message:
     return Message.get(topic_id=topic_id, topic_msg_id=msg_id)
 
 
-def get_user_msg_id_by_topic_msg_id(topic_id: int, msg_id: int) -> Optional[int]:
-    """
-    topic_id + msg_id > tg.msg_id:
-    """
-
-    user = get_user_by_topic_msg_id(topic_id=topic_id, msg_id=msg_id)
-    if user is None:
-        return None
-    return user.user_msg_id
-
-
-# TODO
 # new
 @db_session
 def get_user_by_topic_msg_id2(msg_id: int) -> Message:

@@ -20,11 +20,11 @@ def is_banned(_, __, msg: Message):
         return False
 
     if msg.chat.id == tg_id:
-        if db_filters.get_is_banned_by_tg_id(tg_id=tg_id):
+        if db_filters.get_user_by_tg_id(tg_id=tg_id).ban:
             return False
     else:
         topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
-        if db_filters.get_is_banned_by_topic_id(topic_id=topic_id):
+        if db_filters.get_user_by_topic_id(topic_id=topic_id).ban:
             msg.reply(resolve_msg(key='USER_IS_BANNED'))
             return False
     return True

@@ -44,9 +44,9 @@ def get_reply_to_message_by_user(msg: Message) -> int:
         if is_reply is not None:
             reply = is_reply
         else:
-            reply = db_filters.get_topic_id_by_tg_id(tg_id=tg_id)
+            reply = db_filters.get_user_by_tg_id(tg_id=tg_id).topic.id
     else:
-        reply = db_filters.get_topic_id_by_tg_id(tg_id=tg_id)
+        reply = db_filters.get_user_by_tg_id(tg_id=tg_id).topic.id
     return reply
 
 
@@ -56,14 +56,14 @@ async def forward_message_from_user(c: Client, msg: Message):
     """
 
     tg_id = msg.from_user.id
-    group = db_filters.get_group_by_tg_id(tg_id=tg_id)
+    group = db_filters.get_user_by_tg_id(tg_id=tg_id).group.id
 
     try:
         # if msg forward with credit > forward to topic with credit
         if msg.forward_from is not None or msg.forward_from_chat is not None or \
                 msg.forward_sender_name is not None:
 
-            topic = db_filters.get_topic_id_by_tg_id(tg_id=tg_id)
+            topic = db_filters.get_user_by_tg_id(tg_id=tg_id).topic.id
             peer_user = await c.resolve_peer(msg.from_user.id)
             peer_group = await c.resolve_peer(group)
             # forward message with credit
