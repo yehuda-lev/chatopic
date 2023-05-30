@@ -1,6 +1,5 @@
 import time
 
-import pyrogram
 from pyrogram import Client
 from pyrogram.errors import (BadRequest, InputUserDeactivated, UserIsBlocked, PeerIdInvalid, FloodWait, ChannelPrivate,
                              ChatWriteForbidden, ChatAdminRequired, Forbidden, ChannelInvalid, SlowmodeWait)
@@ -124,8 +123,9 @@ async def forward_message_from_topic(cli: Client, msg: Message):
     """the message sent in topic > forward message to user"""
 
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
-    tg_id = db_filters.get_tg_id_by_topic(topic_id=topic_id)
-    is_protect = db_filters.get_is_protect_by_topic_id(topic_id=topic_id)
+    tg_user = db_filters.get_user_by_topic_id(topic_id=topic_id)
+    tg_id = tg_user.id
+    is_protect = tg_user.protect
     reply = get_reply_to_message_by_topic(msg=msg)
 
     try:
