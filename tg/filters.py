@@ -2,7 +2,8 @@ import time
 
 from pyrogram import Client
 from pyrogram.enums import MessageEntityType
-from pyrogram.errors import ButtonUserPrivacyRestricted, ChatWriteForbidden, Forbidden, ChatAdminRequired, FloodWait
+from pyrogram.errors import (ButtonUserPrivacyRestricted, ChatWriteForbidden,
+                             Forbidden, ChatAdminRequired, FloodWait)
 from pyrogram.raw import functions
 from pyrogram.types import Message, ForceReply, InlineKeyboardMarkup, InlineKeyboardButton
 

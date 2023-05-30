@@ -1,8 +1,8 @@
 from pyrogram import Client
-from pyrogram.errors import BadRequest, Forbidden, SlowmodeWait
+from pyrogram.errors import Forbidden, SlowmodeWait
 from pyrogram.raw import functions
 from pyrogram.raw import types as raw_types
-from pyrogram.raw.types import MessageService, MessageActionTopicEdit, MessageActionRequestedPeer
+from pyrogram.raw.types import MessageActionTopicEdit, MessageActionRequestedPeer
 from pyrogram.types import (Message, ReplyKeyboardRemove, InlineKeyboardMarkup,
                             InlineKeyboardButton, CallbackQuery, BotCommand, BotCommandScopeChat)
 
@@ -52,6 +52,7 @@ def protect(_, msg: Message):
 
     except (Forbidden, SlowmodeWait) as e:
         print(e)
+
 
 async def request_group(c: Client, msg: Message):
     """
