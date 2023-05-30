@@ -20,7 +20,7 @@ dictionary = {
         'en': 'To block a user you must close the topic. \n'
               'To release the block you must open the topic. \n\n'
               'So that the user cannot copy the messages from now on, you must send the command /protect\n'
-              'For the user to be able to copy messages again, you must send the command /unprotect \n\n' 
+              'For the user to be able to copy messages again, you must send the command /unprotect \n\n'
               'To delete a chat message you must respond to the message with the command /delete',
     },
     'PROTECT': {
@@ -113,6 +113,28 @@ dictionary = {
     'COMMAND_SEND': {
         'he': 'שליחת הודעה למנויים',
         'en': 'send message for subscribe'
+    },
+    'ASK_DEL_GROUP': {
+        'he': '**⚠⚠ האם אתה בטוח שברצונך למחוק את הקבוצה?\n'
+              'זה אומר שכל ההודעות/הנושאים/משתמשים. יימחקו ! ⚠⚠**',
+        'en': '**⚠⚠ Are you sure you want to delete the group?\n'
+              'This means all messages/topics/users. will be deleted! ⚠⚠**'
+    },
+    'DEL_GROUP': {
+        'he': 'אוקיי, הקבוצה תימחק.',
+        'en': 'OK, the group will be deleted.'
+    },
+    'NOT_DEL_GROUP': {
+        'he': 'אוקיי, הקבוצה לא תימחק.',
+        'en': 'OK, the group will not be deleted.'
+    },
+    'YES_DELETE': {
+        'he': '⚠⚠ כן, מחק את הקבוצה. ⚠⚠',
+        'en': '⚠⚠ Yes, delete the group. ⚠⚠'
+    },
+    'NO_DELETE': {
+        'he': 'ביטול',
+        'en': 'Cancel'
     }
 }
 

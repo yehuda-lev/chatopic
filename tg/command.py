@@ -177,12 +177,14 @@ def ask_delete_group(_, msg: Message):
     """
     when the admin want to delete the group
     """
-
-    msg.reply(text='**⚠ do you want to delete the group? ⚠**', reply_to_message_id=msg.id,
-              reply_markup=InlineKeyboardMarkup([
-                  [InlineKeyboardButton(text='⚠ YES ⚠', callback_data='delete:yes')],
-                  [InlineKeyboardButton(text='NO', callback_data='delete:no')]
-              ]))
+    if filters_db.get_my_group() != 'not exists':
+        msg.reply(text=resolve_msg('ASK_DEL_GROUP'), reply_to_message_id=msg.id,
+                  reply_markup=InlineKeyboardMarkup([
+                      [InlineKeyboardButton(text=resolve_msg('YES_DELETE'), callback_data='delete:yes')],
+                      [InlineKeyboardButton(text=resolve_msg('NO_DELETE'), callback_data='delete:no')]
+                  ]))
+    else:
+        msg.reply(text=resolve_msg('GROUP_NOT_EXISTS'))
 
 
 def delete_group(c: Client, cbd: CallbackQuery):
@@ -193,13 +195,15 @@ def delete_group(c: Client, cbd: CallbackQuery):
     data = cbd.data.split(':')[1]
 
     if data == 'no':
-        cbd.answer(text='OK, the group will not deleted', show_alert=True)
+        cbd.answer(text=resolve_msg('NOT_DEL_GROUP'), show_alert=True)
         c.delete_messages(chat_id=cbd.from_user.id, message_ids=cbd.message.id)
         c.delete_messages(chat_id=cbd.from_user.id, message_ids=cbd.message.reply_to_message.id)
         return
 
     else:
-        cbd.answer(text='OK, the group will deleted now !', show_alert=True)
+        cbd.answer(text=resolve_msg('DEL_GROUP'), show_alert=True)
+        group = int(filters_db.get_my_group())
+        c.leave_chat(chat_id=group)
         c.delete_messages(chat_id=cbd.from_user.id, message_ids=cbd.message.id)
         c.delete_messages(chat_id=cbd.from_user.id, message_ids=cbd.message.reply_to_message.id)
 
