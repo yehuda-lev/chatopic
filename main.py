@@ -19,7 +19,7 @@ def main():
         if not db_filters.is_admin_exists(tg_id=int(admin)):
             db_filters.create_admin(tg_id=int(admin))
 
-        set_commands_for_admin(c=app, admin_id=int(admin))
+            set_commands_for_admin(c=app, admin_id=int(admin))
 
     print(f"Bot {app.name} is up and running!")
 
