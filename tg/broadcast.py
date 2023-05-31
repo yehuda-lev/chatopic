@@ -33,8 +33,12 @@ def send_message(c: Client, cbd: types.CallbackQuery):
 
     elif cbd.data == 'send_message':
 
-        log_file = open('logger.txt', 'a+')
+        log_file = open('logger.txt', 'a+', encoding='utf-8')
         users = db_filters.get_all_users()
+        if len(users) < 1:
+            c.send_message(chat_id=cbd.from_user.id, text='אין מנויים')
+            c.delete_messages(chat_id=cbd.from_user.id, message_ids=cbd.message.id)
+            return
 
         sent = 0
         failed = 0
