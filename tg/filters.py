@@ -52,12 +52,9 @@ async def is_user_exists(_, c: Client, msg: Message):
     else:
         name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
         create = await create_topic(cli=c, msg=msg)
-        if create is False:
-            return False
+        return create
 
-        group_id, topic_id = int("-100" + str(create.peer_id.channel_id)), create.id
-        db_filters.create_user(tg_id=tg_id, group_id=group_id, topic_id=topic_id, name=name)
-        return True
+    return True
 
 
 async def create_topic(cli: Client, msg: Message):
@@ -84,6 +81,11 @@ async def create_topic(cli: Client, msg: Message):
     except (ChatWriteForbidden, Forbidden) as e:
         print(e)
         return False
+
+    tg_id = msg.from_user.id
+    group_id, topic_id = int("-100" + str(create.updates[1].message.peer_id.channel_id)), \
+        create.updates[1].message.id
+    db_filters.create_user(tg_id=tg_id, group_id=group_id, topic_id=topic_id, name=name)
 
     # time.sleep(0.3)
 
@@ -131,7 +133,7 @@ async def create_topic(cli: Client, msg: Message):
     except FloodWait as e:
         time.sleep(e.value)
 
-    return create.updates[1].message
+    return True
 
 
 def is_topic_or_is_user(_, __, msg: Message) -> bool:
