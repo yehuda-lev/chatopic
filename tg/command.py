@@ -178,7 +178,7 @@ def ask_delete_group(_, msg: Message):
     """
     when the admin want to delete the group
     """
-    if filters_db.get_my_group() != 'not exists':
+    if filters_db.get_my_group() is not None:
         msg.reply(text=resolve_msg('ASK_DEL_GROUP'), reply_to_message_id=msg.id,
                   reply_markup=InlineKeyboardMarkup([
                       [InlineKeyboardButton(text=resolve_msg('YES_DELETE'), callback_data='delete:yes')],

@@ -6,10 +6,7 @@ from db.tables import TgGroup, TgTopic, TgUser, Message, Admin
 
 @db_session
 def check_if_have_a_group() -> bool:
-    group = select(i for i in TgGroup)
-    if group:
-        return True
-    return False
+    return TgGroup.exists()
 
 
 @db_session
@@ -39,6 +36,7 @@ def create_admin(tg_id: int):
 
 @db_session
 def create_group(group_id: int, name: str):
+    print(f'added group: name={name}, id={group_id}')
     return TgGroup(id=str(group_id), name=name)
 
 
@@ -56,11 +54,11 @@ def create_user(tg_id: int, group_id: int, topic_id: int, name: Optional[str]):
 
 
 @db_session
-def get_my_group() -> int | str:
+def get_my_group() -> None | str:
     try:
         return select(i.id for i in TgGroup)[:][0]
     except IndexError:
-        return "not exists"
+        return None
 
 
 @db_session
