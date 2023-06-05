@@ -5,21 +5,22 @@ from pyrogram import Client, types
 from pyrogram.errors import PeerIdInvalid, FloodWait, UserIsBlocked, BadRequest, InputUserDeactivated
 
 from db import filters as db_filters
+from tg.strings import resolve_msg
 
 
 # in the admin want to send message for everyone
 def get_message_for_subscribe(_, msg: types.Message):
     if msg.command:
         if msg.command[0] == 'send':
-            msg.reply(text='אנא שלח את המידע אותו תרצה להעביר למנויים',
+            msg.reply(text=resolve_msg(key='REQUEST_SEND'),
                       reply_markup=types.ForceReply(selective=True,
-                                                    placeholder='אנא שלח את המידע..'))
+                                                    placeholder=resolve_msg(key='REQUEST_SEND_BY_KEYBOARD')))
     elif isinstance(msg.reply_to_message.reply_markup, types.ForceReply):
-        msg.reply(reply_to_message_id=msg.id, text='לשלוח את ההודעה?',
+        msg.reply(reply_to_message_id=msg.id, text=resolve_msg(key='ASK_SEND'),
                   reply_markup=types.InlineKeyboardMarkup(
                       [[
-                          types.InlineKeyboardButton(text="כן", callback_data='send_message'),
-                          types.InlineKeyboardButton(text="לא", callback_data='un_send_message')
+                          types.InlineKeyboardButton(text=resolve_msg(key='YES_SEND'), callback_data='send_message'),
+                          types.InlineKeyboardButton(text=resolve_msg(key='NO_SEND'), callback_data='un_send_message')
                       ]]))
 
 
@@ -28,7 +29,7 @@ def send_message(c: Client, cbd: types.CallbackQuery):
     msg_id = cbd.message.id
     reply_msg_id = cbd.message.reply_to_message.id
     if cbd.data == 'un_send_message':
-        c.send_message(chat_id=tg_id, text='ההודעה לא תישלח למנויים')
+        c.send_message(chat_id=tg_id, text=resolve_msg(key='MSG_NOT_SEND'))
         c.delete_messages(chat_id=tg_id, message_ids=msg_id)
 
     elif cbd.data == 'send_message':
@@ -36,16 +37,15 @@ def send_message(c: Client, cbd: types.CallbackQuery):
         log_file = open('logger.txt', 'a+', encoding='utf-8')
         users = db_filters.get_all_users()
         if len(users) < 1:
-            c.send_message(chat_id=cbd.from_user.id, text='אין מנויים')
+            c.send_message(chat_id=cbd.from_user.id, text=resolve_msg(key='NOT_SUBSCRIBES'))
             c.delete_messages(chat_id=cbd.from_user.id, message_ids=cbd.message.id)
             return
 
         sent = 0
         failed = 0
 
-        c.send_message(chat_id=tg_id, text=f"**📣 starting broadcast to:** "
-                                           f"`{len(users)} users`\nPlease Wait...")
-        progress = c.send_message(chat_id=tg_id, text=f'**Message Sent To:** `{sent} users`')
+        c.send_message(chat_id=tg_id, text=resolve_msg(key='SEND_BROADCAST').format(len(users)))
+        progress = c.send_message(chat_id=tg_id, text=resolve_msg(key='AMOUNT_USERS').format(sent))
 
         for chat in users:
             try:
@@ -54,7 +54,7 @@ def send_message(c: Client, cbd: types.CallbackQuery):
                 sent += 1
 
                 c.edit_message_text(chat_id=tg_id, message_id=progress.id,
-                                    text=f'**Message Sent To:** `{sent}` users')
+                                    text=resolve_msg(key='AMOUNT_USERS').format(sent))
 
                 log_file.write(f"sent to {chat} \n")
 
@@ -90,9 +90,8 @@ def send_message(c: Client, cbd: types.CallbackQuery):
 
         c.delete_messages(chat_id=tg_id, message_ids=msg_id)
 
-        text_done = f"📣 Broadcast Completed\n\n🔸 **Total Users in db:** " \
-                    f"{len(users)}\n\n🔹 Message sent to: {sent} users\n" \
-                    f"🔹 Failed to sent: {failed} users"
+        text_done = resolve_msg(key='STATS_SEND')\
+            .format(users=len(users), sent=sent, failed=failed)
 
         log_file.write('\n\n' + text_done + '\n')
 

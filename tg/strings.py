@@ -87,8 +87,8 @@ dictionary = {
         'en': 'Edited'
     },
     'EDIT_CBD': {
-            'he': 'הודעה זו נערכה !',
-            'en': 'This message has been edited!'
+        'he': 'הודעה זו נערכה !',
+        'en': 'This message has been edited!'
     },
     'COMMAND_INFO': {
         'he': 'מידע על הפעולות בצאט',
@@ -139,6 +139,53 @@ dictionary = {
     'NO_DELETE': {
         'he': 'ביטול',
         'en': 'Cancel'
+    },
+    'REQUEST_SEND': {
+        'he': 'אנא שלח את ההודעה אותה תרצה להעביר למנויים',
+        'en': 'Please send the message you would like to send to subscribers'
+    },
+    'REQUEST_SEND_BY_KEYBOARD': {
+        'he': 'אנא שלח את ההודעה',
+        'en': 'Please send the message'
+    },
+    'ASK_SEND': {
+        'he': 'לשלוח את ההודעה?',
+        'en': 'Send the message?'
+    },
+    'YES_SEND': {
+        'he': 'כן',
+        'en': 'Yes'
+    },
+    'NO_SEND': {
+        'he': 'לא',
+        'en': 'No'
+    },
+    'MSG_NOT_SEND': {
+        'he': 'ההודעה לא תישלח למנויים',
+        'en': 'The message will not be sent to subscribers'
+    },
+    'NOT_SUBSCRIBES': {
+        'he': 'אין מנויים',
+        'en': 'No subscriptions'
+    },
+    'SEND_BROADCAST': {
+        'he': ' **📣 שולח את ההודעה ל {} מנויים**'
+              '\nאנא המתן...',
+        'en': '**📣 starting broadcast to:** '
+              '`{}` users\nPlease Wait..."'
+    },
+    'AMOUNT_USERS': {
+        'he': 'ההודעה נשלחה ל `{}` משתמשים',
+        'en': 'Message Sent To: `{}` users'
+    },
+    'STATS_SEND': {
+        'he': "📣 השידור הושלם\n\n🔸 **כמות המנויים היא:** " 
+              "{users}\n\n🔹 נשלח ל: {sent} משתמשים\n" 
+              "🔹 נכשל ב: {failed} משתמשים",
+
+        'en': "📣 Broadcast Completed\n\n🔸 **Total Users in db:** "
+              "{users}\n\n🔹 Message sent to: {sent} users\n"
+              "🔹 Failed to sent: {failed} users"
     }
 }
 
