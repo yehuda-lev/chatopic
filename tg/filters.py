@@ -50,7 +50,6 @@ async def is_user_exists(_, c: Client, msg: Message):
         else:
             db_filters.change_active(tg_id=tg_id, active=True)
     else:
-        name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
         create = await create_topic(cli=c, msg=msg)
         return create
 
