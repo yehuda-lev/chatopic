@@ -3,7 +3,7 @@ from pyrogram import types
 from pyrogram.errors import MessageIdInvalid, MessageNotModified, ChannelPrivate, BadRequest
 from pyrogram.types import CallbackQuery
 
-from db import filters as filters_db
+from db import repository
 from tg.strings import resolve_msg
 
 
@@ -17,7 +17,7 @@ async def edited_message(cli: Client, msg: types.Message):
     if msg.chat.id == tg_id:  # edited by user
         await edit_message_by_user(cli=cli, msg=msg)
 
-    elif filters_db.is_group_exists(group_id=msg.chat.id):  # edited by topic
+    elif repository.is_group_exists(group_id=msg.chat.id):  # edited by topic
         await edit_message_by_topic(cli, msg)
 
     else:
@@ -31,9 +31,9 @@ async def edit_message_by_user(cli: Client, msg: types.Message):
     """
 
     tg_id = msg.from_user.id
-    chat_id = filters_db.get_user_by_tg_id(tg_id=tg_id).group.id
+    chat_id = repository.get_user_by_tg_id(tg_id=tg_id).group.id
 
-    msg_id = filters_db.get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg.id)
+    msg_id = repository.get_topic_msg_id_by_user_msg_id(tg_id=tg_id, msg_id=msg.id)
     if msg_id is None:
         return
     await edit_message(cli, msg, chat_id, msg_id, is_topic=True)
@@ -101,7 +101,7 @@ async def edit_message_by_topic(cli: Client, msg: types.Message):
     """
 
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
-    tg_user = filters_db.get_user_by_topic_msg_id(topic_id=topic_id, msg_id=msg.id)
+    tg_user = repository.get_user_by_topic_msg_id(topic_id=topic_id, msg_id=msg.id)
 
     chat_id = tg_user.tg_id
     msg_id = tg_user.user_msg_id

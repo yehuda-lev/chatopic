@@ -7,7 +7,7 @@ from pyrogram.errors import (BadRequest, InputUserDeactivated, UserIsBlocked,
 from pyrogram.types import Message
 from pyrogram.raw.functions import messages as raw_func
 
-from db import filters as db_filters
+from db import repository
 
 
 async def forward_message(cli: Client, msg: Message):
@@ -24,7 +24,7 @@ async def forward_message(cli: Client, msg: Message):
     if msg.chat.id == tg_id:  # the message sent by user
         await forward_message_from_user(c=cli, msg=msg)
 
-    elif db_filters.is_group_exists(group_id=msg.chat.id):  # the message sent by topic
+    elif repository.is_group_exists(group_id=msg.chat.id):  # the message sent by topic
         await forward_message_from_topic(cli=cli, msg=msg)
 
     else:
@@ -39,15 +39,15 @@ def get_reply_to_message_by_user(msg: Message) -> int:
 
     tg_id = msg.from_user.id
     if msg.reply_to_message:
-        is_reply = db_filters.get_topic_msg_id_by_user_msg_id(
+        is_reply = repository.get_topic_msg_id_by_user_msg_id(
             tg_id=tg_id, msg_id=msg.reply_to_message.id)
 
         if is_reply is not None:
             reply = is_reply
         else:
-            reply = db_filters.get_user_by_tg_id(tg_id=tg_id).topic.id
+            reply = repository.get_user_by_tg_id(tg_id=tg_id).topic.id
     else:
-        reply = db_filters.get_user_by_tg_id(tg_id=tg_id).topic.id
+        reply = repository.get_user_by_tg_id(tg_id=tg_id).topic.id
     return reply
 
 
@@ -57,14 +57,14 @@ async def forward_message_from_user(c: Client, msg: Message):
     """
 
     tg_id = msg.from_user.id
-    group = db_filters.get_user_by_tg_id(tg_id=tg_id).group.id
+    group = repository.get_user_by_tg_id(tg_id=tg_id).group.id
 
     try:
         # if msg forward with credit > forward to topic with credit
         if msg.forward_from is not None or msg.forward_from_chat is not None or \
                 msg.forward_sender_name is not None:
 
-            topic = db_filters.get_user_by_tg_id(tg_id=tg_id).topic.id
+            topic = repository.get_user_by_tg_id(tg_id=tg_id).topic.id
             peer_user = await c.resolve_peer(msg.from_user.id)
             peer_group = await c.resolve_peer(group)
             # forward message with credit
@@ -87,7 +87,7 @@ async def forward_message_from_user(c: Client, msg: Message):
                 return
 
             forward = await msg.copy(chat_id=int(group), reply_to_message_id=reply)
-            db_filters.create_message(tg_id_or_topic_id=tg_id, is_topic_id=False,
+            repository.create_message(tg_id_or_topic_id=tg_id, is_topic_id=False,
                                       user_msg_id=msg.id, topic_msg_id=forward.id)
 
     except (FloodWait, SlowmodeWait) as e:
@@ -107,7 +107,7 @@ def get_reply_to_message_by_topic(msg: Message) -> int | None:
 
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
     if msg.reply_to_message:
-        is_reply = db_filters.get_user_by_topic_msg_id(
+        is_reply = repository.get_user_by_topic_msg_id(
             topic_id=topic_id,
             msg_id=msg.reply_to_message.id)
 
@@ -125,7 +125,7 @@ async def forward_message_from_topic(cli: Client, msg: Message):
     """the message sent in topic > forward message to user"""
 
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
-    tg_user = db_filters.get_user_by_topic_id(topic_id=topic_id)
+    tg_user = repository.get_user_by_topic_id(topic_id=topic_id)
     tg_id = tg_user.id
     is_protect = tg_user.protect
     reply = get_reply_to_message_by_topic(msg=msg)
@@ -139,14 +139,14 @@ async def forward_message_from_topic(cli: Client, msg: Message):
 
         forward = await msg.copy(chat_id=tg_id, reply_to_message_id=reply,
                                  protect_content=is_protect)
-        db_filters.create_message(tg_id_or_topic_id=topic_id, is_topic_id=True,
+        repository.create_message(tg_id_or_topic_id=topic_id, is_topic_id=True,
                                   user_msg_id=forward.id, topic_msg_id=msg.id)
 
     except (FloodWait, SlowmodeWait) as e:
         time.sleep(e.value)
 
     except (InputUserDeactivated, UserIsBlocked, PeerIdInvalid, BadRequest) as e:
-        db_filters.change_active(tg_id=tg_id, active=False)
+        repository.change_active(tg_id=tg_id, active=False)
         print(f'forward_message_from_topic {e}')
         await msg.reply(text=e.MESSAGE)
 
@@ -194,14 +194,14 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
                 protect_content=protect
             )
 
-        db_filters.create_message(tg_id_or_topic_id=chat, is_topic_id=False,
+        repository.create_message(tg_id_or_topic_id=chat, is_topic_id=False,
                                   user_msg_id=msg.id, topic_msg_id=forward.id)
 
     except (FloodWait, SlowmodeWait) as e:
         time.sleep(e.value)
 
     except (InputUserDeactivated, UserIsBlocked, PeerIdInvalid) as e:
-        db_filters.change_active(tg_id=chat, active=False)
+        repository.change_active(tg_id=chat, active=False)
         print(f'forward_message_from_topic {e}')
         await msg.reply(text=e.MESSAGE)
 

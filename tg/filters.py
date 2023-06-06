@@ -7,7 +7,7 @@ from pyrogram.errors import (ButtonUserPrivacyRestricted, ChatWriteForbidden,
 from pyrogram.raw import functions
 from pyrogram.types import Message, ForceReply, InlineKeyboardMarkup, InlineKeyboardButton
 
-from db import filters as db_filters
+from db import repository
 from tg.strings import resolve_msg
 
 
@@ -21,11 +21,11 @@ def is_banned(_, __, msg: Message):
         return False
 
     if msg.chat.id == tg_id:
-        if db_filters.get_user_by_tg_id(tg_id=tg_id).ban:
+        if repository.get_user_by_tg_id(tg_id=tg_id).ban:
             return False
     else:
         topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
-        if db_filters.get_user_by_topic_id(topic_id=topic_id).ban:
+        if repository.get_user_by_topic_id(topic_id=topic_id).ban:
             msg.reply(resolve_msg(key='USER_IS_BANNED'))
             return False
     return True
@@ -44,11 +44,11 @@ async def is_user_exists(_, c: Client, msg: Message):
     if tg_id != msg.chat.id:
         return True
 
-    if db_filters.is_tg_id_exists(tg_id=tg_id):
-        if db_filters.is_user_active(tg_id):
+    if repository.is_tg_id_exists(tg_id=tg_id):
+        if repository.is_user_active(tg_id):
             return True
         else:
-            db_filters.change_active(tg_id=tg_id, active=True)
+            repository.change_active(tg_id=tg_id, active=True)
     else:
         create = await create_topic(cli=c, msg=msg)
         return create
@@ -66,7 +66,7 @@ async def create_topic(cli: Client, msg: Message):
 
     try:
         # create topic
-        peer = await cli.resolve_peer(int(db_filters.get_my_group()))
+        peer = await cli.resolve_peer(int(repository.get_my_group()))
         create = await cli.invoke(functions.channels.CreateForumTopic(
             channel=peer,
             title=name,
@@ -84,7 +84,7 @@ async def create_topic(cli: Client, msg: Message):
     tg_id = msg.from_user.id
     group_id, topic_id = int("-100" + str(create.updates[1].message.peer_id.channel_id)), \
         create.updates[1].message.id
-    db_filters.create_user(tg_id=tg_id, group_id=group_id, topic_id=topic_id, name=name)
+    repository.create_user(tg_id=tg_id, group_id=group_id, topic_id=topic_id, name=name)
 
     # time.sleep(0.3)
 
@@ -147,13 +147,13 @@ def is_topic_or_is_user(_, __, msg: Message) -> bool:
     except AttributeError:  # when the user send message from channel
         pass
 
-    if db_filters.is_group_exists(group_id=msg.chat.id):  # is my_group
+    if repository.is_group_exists(group_id=msg.chat.id):  # is my_group
         if not (msg.reply_to_top_message_id or msg.reply_to_message_id):  # not in topic
             return False
 
         topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
 
-        if db_filters.is_topic_id_exists(topic_id=topic_id):  # topic exists
+        if repository.is_topic_id_exists(topic_id=topic_id):  # topic exists
             return True
 
     return False
@@ -179,7 +179,7 @@ def is_admin(_, __, msg: Message) -> bool:
     check if msg sent by admin or not.
     """
 
-    if not db_filters.is_admin_exists(tg_id=msg.from_user.id):
+    if not repository.is_admin_exists(tg_id=msg.from_user.id):
         msg.reply(resolve_msg(key='IS_ADMIN'))
         return False
     return True
@@ -190,9 +190,9 @@ def is_have_a_group(_, __, msg: Message):
     check if you have a group.
     """
 
-    if not db_filters.check_if_have_a_group():
+    if not repository.check_if_have_a_group():
 
-        if db_filters.is_admin_exists(tg_id=msg.from_user.id):
+        if repository.is_admin_exists(tg_id=msg.from_user.id):
 
             if not msg.service:
                 if msg.command:

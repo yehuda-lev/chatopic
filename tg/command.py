@@ -6,7 +6,7 @@ from pyrogram.raw.types import MessageActionTopicEdit, MessageActionRequestedPee
 from pyrogram.types import (Message, ReplyKeyboardRemove, InlineKeyboardMarkup,
                             InlineKeyboardButton, CallbackQuery, BotCommand, BotCommandScopeChat)
 
-from db import filters as filters_db
+from db import repository
 from tg.strings import resolve_msg
 from dotenv import load_dotenv
 import os
@@ -38,7 +38,7 @@ def protect(_, msg: Message):
     """
 
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
-    tg_id = filters_db.get_user_by_topic_id(topic_id=topic_id).id
+    tg_id = repository.get_user_by_topic_id(topic_id=topic_id).id
 
     try:
         if msg.command[0] == "protect":
@@ -48,7 +48,7 @@ def protect(_, msg: Message):
             is_protect = False
             msg.reply(resolve_msg('UNPROTECT'))
 
-        filters_db.change_protect(tg_id=tg_id, is_protect=is_protect)
+        repository.change_protect(tg_id=tg_id, is_protect=is_protect)
 
     except (Forbidden, SlowmodeWait) as e:
         print(e)
@@ -114,17 +114,17 @@ async def create_group(c: Client, update: raw_types.UpdateNewMessage, users, cha
             return
 
         if isinstance(update.message.action, MessageActionRequestedPeer):  # add group
-            if filters_db.check_if_have_a_group():  # is have a group
+            if repository.check_if_have_a_group():  # is have a group
                 return
             tg_id = update.message.peer_id.user_id
-            if filters_db.is_admin_exists(tg_id=tg_id):  # is admin
+            if repository.is_admin_exists(tg_id=tg_id):  # is admin
 
                 first_group_id = update.message.action.peer.channel_id
                 group_id = int(f"-100{first_group_id}")
                 info = await c.get_chat(chat_id=group_id)
                 group_name = info.title
 
-                filters_db.create_group(group_id=group_id, name=group_name)  # create group in db
+                repository.create_group(group_id=group_id, name=group_name)  # create group in db
 
                 text = resolve_msg(key='GROUP_ADD') \
                     .format(f"[{group_name}](t.me/c/{first_group_id})")
@@ -161,9 +161,9 @@ async def baned_user_by_closed_topic(c: Client, update: raw_types.UpdateNewMessa
     if topic is closed or opened > ban or unban the user
     """
 
-    tg_id = filters_db.get_user_by_topic_id(update.message.reply_to.reply_to_msg_id).id
+    tg_id = repository.get_user_by_topic_id(update.message.reply_to.reply_to_msg_id).id
     banned = update.message.action.closed
-    filters_db.change_banned(tg_id=tg_id, is_banned=banned)
+    repository.change_banned(tg_id=tg_id, is_banned=banned)
 
     if banned:
         text = resolve_msg(key='BAN')
@@ -178,7 +178,7 @@ def ask_delete_group(_, msg: Message):
     """
     when the admin want to delete the group
     """
-    if filters_db.get_my_group() is not None:
+    if repository.get_my_group() is not None:
         msg.reply(text=resolve_msg('ASK_DEL_GROUP'), reply_to_message_id=msg.id,
                   reply_markup=InlineKeyboardMarkup([
                       [InlineKeyboardButton(text=resolve_msg('YES_DELETE'), callback_data='delete:yes')],
@@ -203,10 +203,10 @@ def delete_group(c: Client, cbd: CallbackQuery):
 
     else:
         cbd.answer(text=resolve_msg('DEL_GROUP'), show_alert=True)
-        group = int(filters_db.get_my_group())
+        group = int(repository.get_my_group())
         c.leave_chat(chat_id=group)
         c.delete_messages(chat_id=cbd.from_user.id, message_ids=cbd.message.id)
         c.delete_messages(chat_id=cbd.from_user.id, message_ids=cbd.message.reply_to_message.id)
 
     # delete the group and all message
-    filters_db.del_all()
+    repository.del_all()

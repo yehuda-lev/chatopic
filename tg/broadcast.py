@@ -4,7 +4,7 @@ import time
 from pyrogram import Client, types
 from pyrogram.errors import PeerIdInvalid, FloodWait, UserIsBlocked, BadRequest, InputUserDeactivated
 
-from db import filters as db_filters
+from db import repository
 from tg.strings import resolve_msg
 
 
@@ -35,7 +35,7 @@ def send_message(c: Client, cbd: types.CallbackQuery):
     elif cbd.data == 'send_message':
 
         log_file = open('logger.txt', 'a+', encoding='utf-8')
-        users = db_filters.get_all_users()
+        users = repository.get_all_users()
         if len(users) < 1:
             c.send_message(chat_id=cbd.from_user.id, text=resolve_msg(key='NOT_SUBSCRIBES'))
             c.delete_messages(chat_id=cbd.from_user.id, message_ids=cbd.message.id)
@@ -65,25 +65,25 @@ def send_message(c: Client, cbd: types.CallbackQuery):
                 time.sleep(e.value)
 
             except InputUserDeactivated:
-                db_filters.change_active(tg_id=chat, active=False)
+                repository.change_active(tg_id=chat, active=False)
                 log_file.write(f"user {chat} is Deactivated\n")
                 failed += 1
                 continue
 
             except UserIsBlocked:
-                db_filters.change_active(tg_id=chat, active=False)
+                repository.change_active(tg_id=chat, active=False)
                 log_file.write(f"user {chat} Blocked your bot\n")
                 failed += 1
                 continue
 
             except PeerIdInvalid:
-                db_filters.change_active(tg_id=chat, active=False)
+                repository.change_active(tg_id=chat, active=False)
                 log_file.write(f"user {chat} IdInvalid\n")
                 failed += 1
                 continue
 
             except BadRequest as e:
-                db_filters.change_active(tg_id=chat, active=False)
+                repository.change_active(tg_id=chat, active=False)
                 log_file.write(f"BadRequest: {e} :{chat}")
                 failed += 1
                 continue

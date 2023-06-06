@@ -2,7 +2,7 @@ from pyrogram import Client
 from pyrogram.errors import MessageDeleteForbidden
 from pyrogram.types import Message
 
-from db import filters as db_filters
+from db import repository
 
 
 def delete_message(c, msg):
@@ -11,10 +11,10 @@ def delete_message(c, msg):
     if msg[0].chat is not None:  # check if msg delete in chat user or group
         group = msg[0].chat.id
 
-        if db_filters.is_group_exists(group_id=group):
+        if repository.is_group_exists(group_id=group):
 
             del_ids = [i.id for i in msg]  # list of id to msg delete
-            msg_ids = [db_filters.get_user_by_topic_msg_id2(i) for i in del_ids]  # list of Message (DB)
+            msg_ids = [repository.get_user_by_topic_msg_id2(i) for i in del_ids]  # list of Message (DB)
 
             my_dict = {}
             for msg in msg_ids:  # create dict{tg_id: [msg_id]}
@@ -33,7 +33,7 @@ def delete_message(c, msg):
 def get_reply_to_message_by_topic(msg: Message):
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
     if msg.reply_to_message:
-        is_reply = db_filters.get_user_by_topic_msg_id(topic_id=topic_id, msg_id=msg.reply_to_message.id)
+        is_reply = repository.get_user_by_topic_msg_id(topic_id=topic_id, msg_id=msg.reply_to_message.id)
         if is_reply is not None:
             reply = is_reply.user_msg_id
         else:
@@ -44,12 +44,12 @@ def get_reply_to_message_by_topic(msg: Message):
 
 
 def delete(c: Client, msg: Message):
-    if db_filters.is_group_exists(group_id=msg.chat.id):
+    if repository.is_group_exists(group_id=msg.chat.id):
         reply = get_reply_to_message_by_topic(msg)
         try:
             if reply:
                 topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
-                tg_id = int(db_filters.get_user_by_topic_id(topic_id=topic_id).id)
+                tg_id = int(repository.get_user_by_topic_id(topic_id=topic_id).id)
                 c.delete_messages(chat_id=tg_id, message_ids=reply)
                 c.delete_messages(chat_id=msg.chat.id, message_ids=msg.reply_to_message.id)
                 c.delete_messages(chat_id=msg.chat.id, message_ids=msg.id)
