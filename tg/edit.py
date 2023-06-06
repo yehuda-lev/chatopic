@@ -1,3 +1,5 @@
+import sqlite3
+
 from pyrogram import Client
 from pyrogram import types
 from pyrogram.errors import MessageIdInvalid, MessageNotModified, ChannelPrivate, BadRequest
@@ -50,6 +52,9 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topi
         except (MessageIdInvalid, MessageNotModified):
             pass
         except (ChannelPrivate, BadRequest):
+            pass
+
+        except sqlite3.InterfaceError:
             pass
 
         return
