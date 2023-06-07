@@ -1,6 +1,6 @@
 import time
 
-from pyrogram import Client
+from pyrogram import Client, types
 from pyrogram.errors import (BadRequest, InputUserDeactivated, UserIsBlocked,
                              PeerIdInvalid, FloodWait, ChannelPrivate, ChatWriteForbidden,
                              ChatAdminRequired, Forbidden, ChannelInvalid, SlowmodeWait)
@@ -51,6 +51,26 @@ def get_reply_to_message_by_user(msg: Message) -> int:
     return reply
 
 
+def get_reply_markup(msg: Message) -> types.InlineKeyboardMarkup | None:
+    """
+    return InlineKeyboardButton URL if msg is instance InlineKeyboardButton URL else return None
+    """
+
+    if isinstance(msg.reply_markup, types.InlineKeyboardMarkup):
+
+        if any(True if b.url is not None else False for a in msg.reply_markup.inline_keyboard for b in a):
+            #  if InlineKeyboardButton is url
+            reply_markup = types.InlineKeyboardMarkup(
+                [[types.InlineKeyboardButton(text=b.text, url=b.url)]
+                 for a in msg.reply_markup.inline_keyboard for b in a if b.url is not None])
+        else:
+            reply_markup = None
+    else:
+        reply_markup = None
+
+    return reply_markup
+
+
 async def forward_message_from_user(c: Client, msg: Message):
     """
     the message sent by user > forward message to topic
@@ -86,7 +106,9 @@ async def forward_message_from_user(c: Client, msg: Message):
                 await send_contact_or_poll_or_location(c, msg, int(group), reply, protect=None)
                 return
 
-            forward = await msg.copy(chat_id=int(group), reply_to_message_id=reply)
+            reply_markup = get_reply_markup(msg=msg)
+
+            forward = await msg.copy(chat_id=int(group), reply_to_message_id=reply, reply_markup=reply_markup)
             repository.create_message(tg_id_or_topic_id=tg_id, is_topic_id=False,
                                       user_msg_id=msg.id, topic_msg_id=forward.id)
 
@@ -137,8 +159,10 @@ async def forward_message_from_topic(cli: Client, msg: Message):
                                                    reply=reply, protect=is_protect)
             return
 
+        reply_markup = get_reply_markup(msg=msg)
+
         forward = await msg.copy(chat_id=tg_id, reply_to_message_id=reply,
-                                 protect_content=is_protect)
+                                 protect_content=is_protect, reply_markup=reply_markup)
         repository.create_message(tg_id_or_topic_id=topic_id, is_topic_id=True,
                                   user_msg_id=forward.id, topic_msg_id=msg.id)
 
