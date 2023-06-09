@@ -1,5 +1,3 @@
-import sqlite3
-
 from pyrogram import Client
 from pyrogram import types
 from pyrogram.errors import MessageIdInvalid, MessageNotModified, ChannelPrivate, BadRequest
@@ -48,16 +46,13 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topi
         try:
             await cli.edit_message_text(
                 chat_id=chat_id, message_id=msg_id, text=msg.text, entities=msg.entities,
-                reply_markup=get_reply_markup(msg, is_topic))
+                reply_markup=get_reply_markup(msg, is_topic)
+            )
 
         except (MessageIdInvalid, MessageNotModified):
             pass
         except (ChannelPrivate, BadRequest):
             pass
-
-        except sqlite3.InterfaceError:
-            pass
-
         return
 
     caption = text if (text := msg.caption.markdown) else None
@@ -90,7 +85,9 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topi
 
 def get_reply_markup(msg: types.Message, is_topic: bool) -> types.InlineKeyboardMarkup | None:
     """
-    return InlineKeyboardButton URL and EDIT if msg is instance InlineKeyboardButton URL else return None
+    return InlineKeyboardButton URL (and EDIT if is_topic)
+    if msg is instance InlineKeyboardButton URL else return None
+    (or EDIT if is_topic)
     """
 
     if isinstance(msg.reply_markup, types.InlineKeyboardMarkup):
@@ -113,6 +110,7 @@ def get_reply_markup(msg: types.Message, is_topic: bool) -> types.InlineKeyboard
             reply_markup.append([types.InlineKeyboardButton(
                 text=resolve_msg(key='EDIT'), callback_data='edit')])
 
+    if reply_markup is not None:
         reply_markup = types.InlineKeyboardMarkup(reply_markup)
 
     return reply_markup
@@ -131,7 +129,7 @@ async def edit_message_by_topic(cli: Client, msg: types.Message):
     tg_user = repository.get_user_by_topic_msg_id(topic_id=topic_id, msg_id=msg.id)
 
     try:
-        chat_id = tg_user.tg_id
+        chat_id = int(tg_user.tg_id.id)
         msg_id = tg_user.user_msg_id
     except AttributeError:
         return
