@@ -46,9 +46,10 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topi
 
     if msg.text:  # not caption
         try:
-            await cli.edit_message_text(chat_id=chat_id, message_id=msg_id, text=msg.text,
-                                        reply_markup=send_reply_markup_only_in_topic(is_topic)
-                                        )
+            await cli.edit_message_text(
+                chat_id=chat_id, message_id=msg_id, text=msg.text, entities=msg.entities,
+                reply_markup=get_reply_markup(msg, is_topic))
+
         except (MessageIdInvalid, MessageNotModified):
             pass
         except (ChannelPrivate, BadRequest):
@@ -59,7 +60,7 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topi
 
         return
 
-    caption = text if (text := msg.caption) else None
+    caption = text if (text := msg.caption.markdown) else None
     if msg.photo:
         media = types.InputMediaPhoto(media=msg.photo.file_id, caption=caption)
     elif msg.video:
@@ -74,26 +75,47 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topi
         # TODO check if you can edit the message
         return
     else:
-        print(msg)
         return
 
     try:
-        await cli.edit_message_media(chat_id=chat_id, message_id=msg_id, media=media,
-                                     reply_markup=send_reply_markup_only_in_topic(is_topic)
-                                     )
+        await cli.edit_message_media(
+            chat_id=chat_id, message_id=msg_id, media=media,
+            reply_markup=get_reply_markup(msg, is_topic))
+
     except (MessageIdInvalid, MessageNotModified):
         pass
     except (ChannelPrivate, BadRequest):
         pass
 
 
-def send_reply_markup_only_in_topic(is_topic: bool):
+def get_reply_markup(msg: types.Message, is_topic: bool) -> types.InlineKeyboardMarkup | None:
+    """
+    return InlineKeyboardButton URL and EDIT if msg is instance InlineKeyboardButton URL else return None
+    """
+
+    if isinstance(msg.reply_markup, types.InlineKeyboardMarkup):
+
+        if any(True if b.url is not None else False for a in msg.reply_markup.inline_keyboard for b in a):
+            #  if InlineKeyboardButton is url
+            reply_markup = [[types.InlineKeyboardButton(text=b.text, url=b.url)]
+                            for a in msg.reply_markup.inline_keyboard for b in a if b.url is not None]
+        else:
+            reply_markup = None
+    else:
+        reply_markup = None
+
     if is_topic:
-        return types.InlineKeyboardMarkup(
-            [[types.InlineKeyboardButton(
+        if reply_markup is None:
+            reply_markup = [[types.InlineKeyboardButton(
                 text=resolve_msg(key='EDIT'), callback_data='edit')]]
-        )
-    return None
+
+        else:
+            reply_markup.append([types.InlineKeyboardButton(
+                text=resolve_msg(key='EDIT'), callback_data='edit')])
+
+        reply_markup = types.InlineKeyboardMarkup(reply_markup)
+
+    return reply_markup
 
 
 def answer_the_message_is_edited(_, cbd: CallbackQuery):
@@ -118,4 +140,3 @@ async def edit_message_by_topic(cli: Client, msg: types.Message):
         return
 
     await edit_message(cli, msg, chat_id, msg_id, is_topic=False)
-
