@@ -13,6 +13,11 @@ def delete_message(c, msg):
 
         if repository.is_group_exists(group_id=group):
 
+            and_messages = msg[-1].id  # check if delete topic or some messages
+            if repository.is_topic_id_exists(topic_id=and_messages):
+                repository.del_topic(topic_id=and_messages)
+                return
+
             del_ids = [i.id for i in msg]  # list of id to msg delete
             msg_ids = [repository.get_user_by_topic_msg_id2(i) for i in del_ids]  # list of Message (DB)
 
