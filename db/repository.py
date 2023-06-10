@@ -119,17 +119,7 @@ def get_topic_msg_id_by_user_msg_id(tg_id: int, msg_id: int) -> Optional[int]:
 
 
 @db_session
-def get_user_by_topic_msg_id(topic_id: int, msg_id: int) -> Message:
-    """
-    topic + msg_id > message
-    """
-
-    return Message.get(topic_id=topic_id, topic_msg_id=msg_id)
-
-
-# new
-@db_session
-def get_user_by_topic_msg_id2(msg_id: int) -> Message:
+def get_user_by_topic_msg_id(msg_id: int) -> Message:
     """
     msg_id (topic) > message
     """

@@ -125,8 +125,9 @@ async def edit_message_by_topic(cli: Client, msg: types.Message):
     the message edit in topic > edit message in the user
     """
 
-    topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
-    tg_user = repository.get_user_by_topic_msg_id(topic_id=topic_id, msg_id=msg.id)
+    tg_user = repository.get_user_by_topic_msg_id(
+        msg_id=msg.id
+    )
 
     try:
         chat_id = int(tg_user.tg_id.id)
