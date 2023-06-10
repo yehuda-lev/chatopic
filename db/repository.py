@@ -159,3 +159,17 @@ def del_all():
     delete(u for u in TgUser)
     delete(g for g in TgGroup)
     print('delete all ⚠')
+
+
+@db_session
+def del_topic(topic_id: int):
+    """
+    delete topic and user
+    """
+
+    user = get_user_by_topic_id(topic_id=topic_id)
+    user.delete()
+
+    topic = get_topic_by_topic_id(topic_id=topic_id)
+    topic.delete()
+
