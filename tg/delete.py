@@ -19,7 +19,7 @@ def delete_message(c, msg):
                 return
 
             del_ids = [i.id for i in msg]  # list of id to msg delete
-            msg_ids = [repository.get_user_by_topic_msg_id2(i) for i in del_ids]  # list of Message (DB)
+            msg_ids = [repository.get_user_by_topic_msg_id(msg_id=i) for i in del_ids]  # list of Message (DB)
 
             my_dict = {}
             for msg in msg_ids:  # create dict{tg_id: [msg_id]}
