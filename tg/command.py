@@ -32,6 +32,26 @@ def get_info_command(_, msg: Message):
         print(e)
 
 
+def unban_user(c: Client, msg: Message):
+    """
+    in the admin want to unban user and deleted the topic
+    """
+    try:
+        if not len(msg.command) == 2 or not msg.command[-1].isdigit():
+            msg.reply(text=resolve_msg(key='SYNTAX_ID'))
+            return
+    except IndexError:
+        msg.reply(text=resolve_msg(key='SYNTAX_ID'))
+        return
+
+    tg_id = int(msg.command[1])
+    if repository.is_tg_id_exists(tg_id=tg_id):
+        repository.change_banned(tg_id=tg_id, is_banned=False)
+        msg.reply(text=resolve_msg(key='UNBAN_USER').format(tg_id))
+    else:
+        msg.reply(text=resolve_msg(key='USER_NOT_EXISTS').format(tg_id))
+
+
 def protect(_, msg: Message):
     """
     in the admin want to protect/unprotect the messages to send the users

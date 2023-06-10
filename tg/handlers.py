@@ -4,7 +4,7 @@ from pyrogram import handlers
 from tg import filters as tg_filters
 from tg.broadcast import send_message, get_message_for_subscribe
 from tg.command import (get_info_command, protect, request_group,
-                        create_group, send_welcome, ask_delete_group, delete_group)
+                        create_group, send_welcome, ask_delete_group, delete_group, unban_user)
 from tg.delete import delete, delete_message
 from tg.edit import edited_message, answer_the_message_is_edited
 from tg.forward import forward_message
@@ -12,6 +12,11 @@ from tg.forward import forward_message
 HANDLERS = [
     handlers.MessageHandler(get_info_command, pyrogram.filters.command("info")
                             & pyrogram.filters.text & pyrogram.filters.group
+                            & pyrogram.filters.create(tg_filters.is_topic_or_is_user)),
+
+    handlers.MessageHandler(unban_user, pyrogram.filters.command("unban")
+                            & pyrogram.filters.text & pyrogram.filters.private
+                            & pyrogram.filters.create(tg_filters.is_admin)
                             & pyrogram.filters.create(tg_filters.is_topic_or_is_user)),
 
     handlers.MessageHandler(delete, pyrogram.filters.command("delete")

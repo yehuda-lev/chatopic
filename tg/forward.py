@@ -7,6 +7,7 @@ from pyrogram.errors import (BadRequest, InputUserDeactivated, UserIsBlocked,
 from pyrogram.types import Message
 from pyrogram.raw.functions import messages as raw_func
 
+import tg.filters
 from db import repository
 
 
@@ -77,25 +78,27 @@ async def forward_message_from_user(c: Client, msg: Message):
     """
 
     tg_id = msg.from_user.id
-    group = repository.get_user_by_tg_id(tg_id=tg_id).group.id
+    user = repository.get_user_by_tg_id(tg_id=tg_id)
+    group = user.group.id
 
     try:
         # if msg forward with credit > forward to topic with credit
         if msg.forward_from is not None or msg.forward_from_chat is not None or \
                 msg.forward_sender_name is not None:
 
-            topic = repository.get_user_by_tg_id(tg_id=tg_id).topic.id
+            topic = user.topic.id
             peer_user = await c.resolve_peer(msg.from_user.id)
             peer_group = await c.resolve_peer(group)
             # forward message with credit
             await c.invoke(
-                raw_func.ForwardMessages(from_peer=peer_user,
-                                         random_id=[c.rnd_id()],
-                                         drop_author=False,
-                                         id=[msg.id],
-                                         to_peer=peer_group,
-                                         top_msg_id=topic
-                                         )
+                raw_func.ForwardMessages(
+                    from_peer=peer_user,
+                    random_id=[c.rnd_id()],
+                    drop_author=False,
+                    id=[msg.id],
+                    to_peer=peer_group,
+                    top_msg_id=topic
+                )
             )
 
         else:
@@ -116,9 +119,21 @@ async def forward_message_from_user(c: Client, msg: Message):
         time.sleep(e.value)
 
     except (ChannelPrivate, ChatWriteForbidden, ChatAdminRequired,
-            ChannelInvalid, Forbidden, BadRequest) as e:
+            ChannelInvalid, Forbidden) as e:
         print("forward_message_from_user", e)
-        return
+
+    except BadRequest as e:
+
+        if e.value == '[400 TOPIC_DELETED]':
+            # if delete topic > create new topic and forward the message
+
+            topic = user.topic.id
+            repository.del_topic(topic_id=topic)
+            await tg.filters.create_topic(c, msg)
+            await forward_message_from_user(c, msg)
+
+        else:
+            print("forward_message_from_user", e)
 
 
 def get_reply_to_message_by_topic(msg: Message) -> int | None:

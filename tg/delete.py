@@ -15,6 +15,11 @@ def delete_message(c, msg):
 
             and_messages = msg[-1].id  # check if delete topic or some messages
             if repository.is_topic_id_exists(topic_id=and_messages):
+
+                # if user banned > return
+                if repository.get_user_by_topic_id(topic_id=and_messages).ban:
+                    return
+
                 repository.del_topic(topic_id=and_messages)
                 return
 

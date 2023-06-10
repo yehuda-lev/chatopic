@@ -114,6 +114,10 @@ dictionary = {
         'he': '⚠ מחיקת הקבוצה ⚠',
         'en': '⚠ delete the group ⚠'
     },
+    'COMMAND_UNBAN': {
+        'he': 'שחרר משתמש באמצעות ID',
+        'en': 'unban user with ID'
+    },
     'COMMAND_SEND': {
         'he': 'שליחת הודעה למנויים',
         'en': 'send message for subscribe'
@@ -179,13 +183,25 @@ dictionary = {
         'en': 'Message Sent To: `{}` users'
     },
     'STATS_SEND': {
-        'he': "📣 השידור הושלם\n\n🔸 **כמות המנויים היא:** " 
-              "{users}\n\n🔹 נשלח ל: {sent} משתמשים\n" 
+        'he': "📣 השידור הושלם\n\n🔸 **כמות המנויים היא:** "
+              "{users}\n\n🔹 נשלח ל: {sent} משתמשים\n"
               "🔹 נכשל ב: {failed} משתמשים",
 
         'en': "📣 Broadcast Completed\n\n🔸 **Total Users in db:** "
               "{users}\n\n🔹 Message sent to: {sent} users\n"
               "🔹 Failed to sent: {failed} users"
+    },
+    'SYNTAX_ID': {
+        'he': 'עליך לשלוח הודעה בצורה כזו:\n "/unban 1234"',
+        'en': 'You must send a message like this:\n "/unban 1234"'
+    },
+    'UNBAN_USER': {
+        'he': 'המשתמש {} שוחרר',
+        'en': 'the user {} unban'
+    },
+    'USER_NOT_EXISTS': {
+        'he': 'המשתמש {} אינו קיים',
+        'en': 'The user {} is not exists'
     }
 }
 
