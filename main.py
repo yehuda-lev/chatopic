@@ -37,6 +37,7 @@ def set_commands_for_admin(c: Client, admin_id: int):
                 BotCommand(command='start', description='start'),
                 BotCommand(command='add_group', description=resolve_msg('COMMAND_ADD_GROUP')),
                 BotCommand(command='delete_group', description=resolve_msg('COMMAND_DELETE_GROUP')),
+                BotCommand(command='unban', description=resolve_msg('COMMAND_UNBAN')),
                 BotCommand(command='send', description=resolve_msg('COMMAND_SEND'))
             ],
             scope=BotCommandScopeChat(chat_id=admin_id)
