@@ -36,6 +36,7 @@ def unban_user(c: Client, msg: Message):
     """
     in the admin want to unban user and deleted the topic
     """
+
     try:
         if not len(msg.command) == 2 or not msg.command[-1].isdigit():
             msg.reply(text=resolve_msg(key='SYNTAX_ID'))
@@ -46,8 +47,12 @@ def unban_user(c: Client, msg: Message):
 
     tg_id = int(msg.command[1])
     if repository.is_tg_id_exists(tg_id=tg_id):
-        repository.change_banned(tg_id=tg_id, is_banned=False)
+
+        topic_id = repository.get_user_by_tg_id(tg_id=tg_id).topic.id
+        repository.change_banned(topic_id=topic_id, is_banned=False)
+
         msg.reply(text=resolve_msg(key='UNBAN_USER').format(tg_id))
+
     else:
         msg.reply(text=resolve_msg(key='USER_NOT_EXISTS').format(tg_id))
 
@@ -68,7 +73,7 @@ def protect(_, msg: Message):
             is_protect = False
             msg.reply(resolve_msg('UNPROTECT'))
 
-        repository.change_protect(tg_id=tg_id, is_protect=is_protect)
+        repository.change_protect(topic_id=topic_id, is_protect=is_protect)
 
     except (Forbidden, SlowmodeWait) as e:
         print(e)
@@ -181,9 +186,9 @@ async def baned_user_by_closed_topic(c: Client, update: raw_types.UpdateNewMessa
     if topic is closed or opened > ban or unban the user
     """
 
-    tg_id = repository.get_user_by_topic_id(update.message.reply_to.reply_to_msg_id).id
+    topic_id = update.message.reply_to.reply_to_msg_id
     banned = update.message.action.closed
-    repository.change_banned(tg_id=tg_id, is_banned=banned)
+    repository.change_banned(topic_id=topic_id, is_banned=banned)
 
     if banned:
         text = resolve_msg(key='BAN')
