@@ -142,13 +142,13 @@ def get_reply_to_message_by_topic(msg: Message) -> int | None:
     if not reply: return None
     """
 
-    if msg.reply_to_message:
-        is_reply = repository.get_user_by_topic_msg_id(
+    if msg.reply_to_top_message_id is not None:
+        is_reply_exists = repository.get_user_by_topic_msg_id(
             msg_id=msg.reply_to_message.id
         )
 
-        if is_reply is not None:
-            reply = is_reply.user_msg_id
+        if is_reply_exists is not None:
+            reply = is_reply_exists.user_msg_id
         else:
             reply = None
     else:
