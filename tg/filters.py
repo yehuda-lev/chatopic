@@ -45,7 +45,7 @@ async def is_user_exists(_, c: Client, msg: Message):
         return True
 
     if repository.is_tg_id_exists(tg_id=tg_id):
-        if repository.is_user_active(tg_id):
+        if repository.is_user_active(tg_id=tg_id):
             return True
         else:
             repository.change_active(tg_id=tg_id, active=True)
