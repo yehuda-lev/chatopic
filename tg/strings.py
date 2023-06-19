@@ -1,7 +1,10 @@
 import os
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_LANG = os.environ['DEFAULT_LANGUAGE'].lower()
 
@@ -209,5 +212,6 @@ dictionary = {
 def resolve_msg(key: str) -> str:
     try:
         return dictionary[key][DEFAULT_LANG]
-    except KeyError:
+    except KeyError as e:
+        logger.error(e)
         return 'Error'

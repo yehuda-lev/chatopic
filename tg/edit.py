@@ -1,3 +1,5 @@
+import logging
+
 from pyrogram import Client
 from pyrogram import types
 from pyrogram.errors import MessageIdInvalid, MessageNotModified, ChannelPrivate, BadRequest
@@ -5,6 +7,8 @@ from pyrogram.types import CallbackQuery
 
 from db import repository
 from tg.strings import resolve_msg
+
+logger = logging.getLogger(__name__)
 
 
 async def edited_message(cli: Client, msg: types.Message):
@@ -21,7 +25,6 @@ async def edited_message(cli: Client, msg: types.Message):
         await edit_message_by_topic(cli, msg)
 
     else:
-        print("not edited")
         return
 
 
@@ -30,6 +33,7 @@ async def edit_message_by_user(cli: Client, msg: types.Message):
     the user edit message > edit message in topic
     """
 
+    logger.debug('user edit message')
     tg_id = msg.from_user.id
     chat_id = repository.get_user_by_tg_id(tg_id=tg_id).group.id
 
@@ -42,6 +46,7 @@ async def edit_message_by_user(cli: Client, msg: types.Message):
 async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topic: bool):
     """edit message in chat_id"""
 
+    logger.debug('edit message')
     if msg.text:  # not caption
         try:
             await cli.edit_message_text(
@@ -49,10 +54,10 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topi
                 reply_markup=get_reply_markup(msg, is_topic)
             )
 
-        except (MessageIdInvalid, MessageNotModified):
-            pass
-        except (ChannelPrivate, BadRequest):
-            pass
+        except (MessageIdInvalid, MessageNotModified) as e:
+            logger.debug(e)
+        except (ChannelPrivate, BadRequest) as e:
+            logger.error(e)
         return
 
     caption = text if (text := msg.caption.markdown) else None
@@ -77,10 +82,11 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topi
             chat_id=chat_id, message_id=msg_id, media=media,
             reply_markup=get_reply_markup(msg, is_topic))
 
-    except (MessageIdInvalid, MessageNotModified):
-        pass
-    except (ChannelPrivate, BadRequest):
-        pass
+    except (MessageIdInvalid, MessageNotModified) as e:
+        logger.debug(e)
+    except (ChannelPrivate, BadRequest) as e:
+        logger.error(e)
+    return
 
 
 def get_reply_markup(msg: types.Message, is_topic: bool) -> types.InlineKeyboardMarkup | None:
@@ -125,6 +131,7 @@ async def edit_message_by_topic(cli: Client, msg: types.Message):
     the message edit in topic > edit message in the user
     """
 
+    logger.debug('message edit in topic')
     tg_user = repository.get_user_by_topic_msg_id(
         msg_id=msg.id
     )

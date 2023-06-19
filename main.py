@@ -1,3 +1,4 @@
+import logging
 import os
 from pyrogram import Client
 from dotenv import load_dotenv
@@ -9,6 +10,25 @@ from tg import handlers
 from tg.strings import resolve_msg
 
 load_dotenv()
+
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.ERROR)
+
+file_handler = logging.FileHandler('your_log_file.log')
+file_handler.setLevel(logging.DEBUG)
+
+logging.basicConfig(
+    format='Time> %(asctime)s | Module> %(module)s | LevelName> %(levelname)s | '
+           'Message> %(message)s | Name> %(name)s | FuncName> %(funcName)s | Line > %(lineno)d',
+    level=logging.INFO,
+    handlers=[
+        file_handler,
+        console_handler
+    ]
+)
+
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -42,8 +62,8 @@ def set_commands_for_admin(c: Client, admin_id: int):
             ],
             scope=BotCommandScopeChat(chat_id=admin_id)
         )
-    except PeerIdInvalid:
-        pass
+    except PeerIdInvalid as e:
+        logger.error(e)
     c.stop()
 
 

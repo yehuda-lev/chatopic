@@ -1,5 +1,8 @@
+import logging
+import time
+
 from pyrogram import Client
-from pyrogram.errors import Forbidden, SlowmodeWait
+from pyrogram.errors import Forbidden, SlowmodeWait, FloodWait
 from pyrogram.raw import functions
 from pyrogram.raw import types as raw_types
 from pyrogram.raw.types import MessageActionTopicEdit, MessageActionRequestedPeer
@@ -12,6 +15,8 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 def send_welcome(_, msg: Message):
@@ -28,8 +33,11 @@ def get_info_command(_, msg: Message):
     """
     try:
         msg.reply(text=resolve_msg(key='INFO'))
+    except FloodWait as e:
+        logger.debug(e)
+        time.sleep(e.value)
     except (Forbidden, SlowmodeWait) as e:
-        print(e)
+        logger.error(e)
 
 
 def unban_user(c: Client, msg: Message):
@@ -37,6 +45,7 @@ def unban_user(c: Client, msg: Message):
     in the admin want to unban user and deleted the topic
     """
 
+    logger.debug('admin send command unban')
     try:
         if not len(msg.command) == 2 or not msg.command[-1].isdigit():
             msg.reply(text=resolve_msg(key='SYNTAX_ID'))
@@ -63,7 +72,6 @@ def protect(_, msg: Message):
     """
 
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
-    tg_id = repository.get_user_by_topic_id(topic_id=topic_id).id
 
     try:
         if msg.command[0] == "protect":
@@ -75,8 +83,11 @@ def protect(_, msg: Message):
 
         repository.change_protect(topic_id=topic_id, is_protect=is_protect)
 
+    except FloodWait as e:
+        logger.debug(e)
+        time.sleep(e.value)
     except (Forbidden, SlowmodeWait) as e:
-        print(e)
+        logger.error(e)
 
 
 async def request_group(c: Client, msg: Message):
@@ -88,15 +99,16 @@ async def request_group(c: Client, msg: Message):
         return
     peer = await c.resolve_peer(msg.chat.id)
     await c.invoke(
-        functions.messages.SendMessage(peer=peer,
-                                       message=resolve_msg(key='REQUEST'),
-                                       random_id=c.rnd_id(),
-                                       reply_markup=reply_markup(msg)
-                                       )
+        functions.messages.SendMessage(
+            peer=peer,
+            message=resolve_msg(key='REQUEST'),
+            random_id=c.rnd_id(),
+            reply_markup=reply_markup()
+        )
     )
 
 
-def reply_markup(msg):
+def reply_markup():
     """
     :return raw keyboard
     """
@@ -127,7 +139,7 @@ def reply_markup(msg):
 
 
 # raw_update
-async def create_group(c: Client, update: raw_types.UpdateNewMessage, users, chats):
+async def raw_update(c: Client, update: raw_types.UpdateNewMessage, users, chats):
     """
     in the bot a receives a message 'RequestPeerTypeChat'
     """
@@ -138,26 +150,10 @@ async def create_group(c: Client, update: raw_types.UpdateNewMessage, users, cha
         if not update.message.action:
             return
 
-        if isinstance(update.message.action, MessageActionRequestedPeer):  # add group
-            if repository.check_if_have_a_group():  # is have a group
-                return
-            tg_id = update.message.peer_id.user_id
-            if repository.is_admin_exists(tg_id=tg_id):  # is admin
-
-                first_group_id = update.message.action.peer.channel_id
-                group_id = int(f"-100{first_group_id}")
-                info = await c.get_chat(chat_id=group_id)
-                group_name = info.title
-
-                repository.create_group(group_id=group_id, name=group_name)  # create group in db
-
-                text = resolve_msg(key='GROUP_ADD') \
-                    .format(f"[{group_name}](t.me/c/{first_group_id})")
-
-                await c.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
-                                     text=text,
-                                     reply_markup=ReplyKeyboardRemove(selective=True))
-                await set_commands_for_group(c, group_id)
+        logger.debug('raw update')
+        if isinstance(update.message.action, MessageActionRequestedPeer):
+            # add group
+            await create_group(c=c, update=update)
 
         # close/open topic > ban/unban user from the bot
         elif isinstance(update.message.action, MessageActionTopicEdit):
@@ -167,6 +163,28 @@ async def create_group(c: Client, update: raw_types.UpdateNewMessage, users, cha
 
     except AttributeError:
         return
+
+
+async def create_group(c: Client, update: raw_types.UpdateNewMessage):
+    if repository.check_if_have_a_group():  # is have a group
+        return
+    tg_id = update.message.peer_id.user_id
+    if repository.is_admin_exists(tg_id=tg_id):  # is admin
+
+        first_group_id = update.message.action.peer.channel_id
+        group_id = int(f"-100{first_group_id}")
+        info = await c.get_chat(chat_id=group_id)
+        group_name = info.title
+
+        repository.create_group(group_id=group_id, name=group_name)  # create group in db
+
+        text = resolve_msg(key='GROUP_ADD') \
+            .format(f"[{group_name}](t.me/c/{first_group_id})")
+
+        await c.send_message(chat_id=tg_id, reply_to_message_id=update.message.id,
+                             text=text,
+                             reply_markup=ReplyKeyboardRemove(selective=True))
+        await set_commands_for_group(c, group_id)
 
 
 async def set_commands_for_group(c: Client, group_id: int):
@@ -194,9 +212,14 @@ async def baned_user_by_closed_topic(c: Client, update: raw_types.UpdateNewMessa
         text = resolve_msg(key='BAN')
     else:
         text = resolve_msg(key='UNBAN')
-
-    await c.send_message(chat_id=int(f'-100{update.message.peer_id.channel_id}'),
+    try:
+        await c.send_message(chat_id=int(f'-100{update.message.peer_id.channel_id}'),
                          reply_to_message_id=update.message.id, text=text)
+    except FloodWait as e:
+        logger.debug(e)
+        time.sleep(e.value)
+    except (Forbidden, SlowmodeWait) as e:
+        logger.error(e)
 
 
 def ask_delete_group(_, msg: Message):
@@ -235,3 +258,4 @@ def delete_group(c: Client, cbd: CallbackQuery):
 
     # delete the group and all message
     repository.del_all()
+    logger.warning('deleted the group and all DB')

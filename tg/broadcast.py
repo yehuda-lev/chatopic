@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 
@@ -7,21 +8,27 @@ from pyrogram.errors import PeerIdInvalid, FloodWait, UserIsBlocked, BadRequest,
 from db import repository
 from tg.strings import resolve_msg
 
+logger = logging.getLogger(__name__)
+
 
 # in the admin want to send message for everyone
 def get_message_for_subscribe(_, msg: types.Message):
     if msg.command:
         if msg.command[0] == 'send':
-            msg.reply(text=resolve_msg(key='REQUEST_SEND'),
-                      reply_markup=types.ForceReply(selective=True,
-                                                    placeholder=resolve_msg(key='REQUEST_SEND_BY_KEYBOARD')))
+            msg.reply(
+                text=resolve_msg(key='REQUEST_SEND'),
+                reply_markup=types.ForceReply(
+                    selective=True,
+                    placeholder=resolve_msg(key='REQUEST_SEND_BY_KEYBOARD')))
+
     elif isinstance(msg.reply_to_message.reply_markup, types.ForceReply):
-        msg.reply(reply_to_message_id=msg.id, text=resolve_msg(key='ASK_SEND'),
-                  reply_markup=types.InlineKeyboardMarkup(
-                      [[
-                          types.InlineKeyboardButton(text=resolve_msg(key='YES_SEND'), callback_data='send_message'),
-                          types.InlineKeyboardButton(text=resolve_msg(key='NO_SEND'), callback_data='un_send_message')
-                      ]]))
+        msg.reply(
+            reply_to_message_id=msg.id, text=resolve_msg(key='ASK_SEND'),
+            reply_markup=types.InlineKeyboardMarkup(
+                [[
+                    types.InlineKeyboardButton(text=resolve_msg(key='YES_SEND'), callback_data='send_message'),
+                    types.InlineKeyboardButton(text=resolve_msg(key='NO_SEND'), callback_data='un_send_message')
+                ]]))
 
 
 def send_message(c: Client, cbd: types.CallbackQuery):
@@ -61,36 +68,39 @@ def send_message(c: Client, cbd: types.CallbackQuery):
                 time.sleep(.05)  # 20 messages per second (Limit: 30 messages per second)
 
             except FloodWait as e:
-                print(e)
+                logger.debug(e)
                 time.sleep(e.value)
 
             except InputUserDeactivated:
                 repository.change_active(tg_id=chat, active=False)
                 log_file.write(f"user {chat} is Deactivated\n")
+                logger.error(f"user {chat} is Deactivated\n")
                 failed += 1
                 continue
 
             except UserIsBlocked:
                 repository.change_active(tg_id=chat, active=False)
                 log_file.write(f"user {chat} Blocked your bot\n")
+                logger.error(f"user {chat} Blocked your bot\n")
                 failed += 1
                 continue
 
             except PeerIdInvalid:
                 repository.change_active(tg_id=chat, active=False)
-                log_file.write(f"user {chat} IdInvalid\n")
+                logger.error(f"user {chat} IdInvalid\n")
                 failed += 1
                 continue
 
             except BadRequest as e:
                 repository.change_active(tg_id=chat, active=False)
                 log_file.write(f"BadRequest: {e} :{chat}")
+                logger.error(f"BadRequest: {e} :{chat}")
                 failed += 1
                 continue
 
         c.delete_messages(chat_id=tg_id, message_ids=msg_id)
 
-        text_done = resolve_msg(key='STATS_SEND')\
+        text_done = resolve_msg(key='STATS_SEND') \
             .format(users=len(users), sent=sent, failed=failed)
 
         log_file.write('\n\n' + text_done + '\n')
