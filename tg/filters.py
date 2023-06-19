@@ -1,5 +1,7 @@
 import time
 
+import logging
+
 from pyrogram import Client
 from pyrogram.enums import MessageEntityType
 from pyrogram.errors import (ButtonUserPrivacyRestricted, ChatWriteForbidden,
@@ -10,11 +12,15 @@ from pyrogram.types import Message, ForceReply, InlineKeyboardMarkup, InlineKeyb
 from db import repository
 from tg.strings import resolve_msg
 
+logger = logging.getLogger(__name__)
+
 
 def is_banned(_, __, msg: Message):
     """
     filter to check if user is banned or not
     """
+
+    logger.debug('checking if user is banned or not')
     try:
         tg_id = msg.from_user.id
     except AttributeError:
@@ -36,12 +42,14 @@ async def is_user_exists(_, c: Client, msg: Message):
     filter to check if user exists. if not exists >
     create topic for user and create topic in the DB
     """
+
+    logger.debug('check if user exists. if not,create user')
     try:
         tg_id = msg.from_user.id
     except AttributeError:
         return True
 
-    if tg_id != msg.chat.id:
+    if tg_id != msg.chat.id:  # check if msg sent in group
         return True
 
     if repository.is_tg_id_exists(tg_id=tg_id):
@@ -74,11 +82,11 @@ async def create_topic(cli: Client, msg: Message):
             icon_color=None,
             icon_emoji_id=5312016608254762256,
             send_as=None
-            )
+        )
         )
 
     except (ChatWriteForbidden, Forbidden) as e:
-        print(e)
+        logger.error(e)
         return False
 
     tg_id = msg.from_user.id
@@ -97,21 +105,26 @@ async def create_topic(cli: Client, msg: Message):
 
     chat_id = int("-100" + str(create.updates[1].message.peer_id.channel_id))
 
+    # try:
     try:
-        try:
-            if photo is None:  # if not have a photo > send text
-                send = await cli.send_message(chat_id=chat_id, text=text,
-                                              reply_to_message_id=create.updates[1].message.id,
-                                              reply_markup=InlineKeyboardMarkup([[
-                                                  InlineKeyboardButton(text=name, user_id=msg.from_user.id)]]))
+        if photo is None:  # if not have a photo > send text
+            send = await cli.send_message(chat_id=chat_id, text=text,
+                                          reply_to_message_id=create.updates[1].message.id,
+                                          reply_markup=InlineKeyboardMarkup([[
+                                              InlineKeyboardButton(text=name, user_id=msg.from_user.id)]]))
 
-            else:  # if user have a photo > send photo + text
-                async for photo in cli.get_chat_photos(msg.from_user.id, limit=1):
-                    send = await cli.send_photo(chat_id=chat_id, photo=photo.file_id,
-                                                caption=text, reply_to_message_id=create.updates[1].message.id,
-                                                reply_markup=InlineKeyboardMarkup([[
-                                                    InlineKeyboardButton(text=name, user_id=msg.from_user.id)]]))
-        except ButtonUserPrivacyRestricted:
+        else:  # if user have a photo > send photo + text
+            async for photo in cli.get_chat_photos(msg.from_user.id, limit=1):
+                send = await cli.send_photo(chat_id=chat_id, photo=photo.file_id,
+                                            caption=text, reply_to_message_id=create.updates[1].message.id,
+                                            reply_markup=InlineKeyboardMarkup([[
+                                                InlineKeyboardButton(text=name, user_id=msg.from_user.id)]]))
+    except FloodWait as e:
+        logger.debug(e)
+        time.sleep(e.value)
+
+    except ButtonUserPrivacyRestricted:
+        try:
             if photo is None:  # if not have a photo > send text
                 send = await cli.send_message(chat_id=chat_id, text=text,
                                               reply_to_message_id=create.updates[1].message.id)
@@ -121,15 +134,20 @@ async def create_topic(cli: Client, msg: Message):
                     send = await cli.send_photo(chat_id=chat_id, photo=photo.file_id,
                                                 caption=text,
                                                 reply_to_message_id=create.updates[1].message.id)
+        except FloodWait as e:
+            logger.debug(e)
+            time.sleep(e.value)
 
+    try:
         # pinned the message
-        try:
-            await cli.unpin_chat_message(chat_id=chat_id, message_id=send.id)
-            await cli.pin_chat_message(chat_id=chat_id, message_id=send.id)
-        except ChatAdminRequired:
-            return False
+        await cli.unpin_chat_message(chat_id=chat_id, message_id=send.id)
+        await cli.pin_chat_message(chat_id=chat_id, message_id=send.id)
+    except ChatAdminRequired as e:
+        logger.error(e)
+        return False
 
     except FloodWait as e:
+        logger.debug(e)
         time.sleep(e.value)
 
     return True

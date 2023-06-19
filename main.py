@@ -1,3 +1,4 @@
+import logging
 import os
 from pyrogram import Client
 from dotenv import load_dotenv
@@ -11,6 +12,25 @@ from tg.strings import resolve_msg
 load_dotenv()
 
 
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.ERROR)
+
+file_handler = logging.FileHandler('your_log_file.log')
+file_handler.setLevel(logging.DEBUG)
+
+logging.basicConfig(
+    format='Time> %(asctime)s | Module> %(module)s | LevelName> %(levelname)s | '
+           'Message> %(message)s | Name> %(name)s | FuncName> %(funcName)s | Line > %(lineno)d',
+    level=logging.INFO,
+    handlers=[
+        file_handler,
+        console_handler
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+
 def main():
     app = Client(name=os.environ['PYROGRAM_NAME_SESSION'], api_id=os.environ['TELEGRAM_API_ID'],
                  api_hash=os.environ['TELEGRAM_API_HASH'], bot_token=os.environ['TELEGRAM_BOT_TOKEN'])
@@ -21,7 +41,7 @@ def main():
 
             set_commands_for_admin(c=app, admin_id=int(admin))
 
-    print(f"Bot {app.name} is up and running!")
+    logger.debug(f"Bot {app.name} is up and running!")
 
     for handler in handlers.HANDLERS:
         app.add_handler(handler)
@@ -42,8 +62,8 @@ def set_commands_for_admin(c: Client, admin_id: int):
             ],
             scope=BotCommandScopeChat(chat_id=admin_id)
         )
-    except PeerIdInvalid:
-        pass
+    except PeerIdInvalid as e:
+        logger.error(e)
     c.stop()
 
 

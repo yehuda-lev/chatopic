@@ -1,13 +1,18 @@
+import logging
+
 from pyrogram import Client
 from pyrogram.errors import MessageDeleteForbidden
 from pyrogram.types import Message
 
 from db import repository
 
+logger = logging.getLogger(__name__)
+
 
 def delete_message(c, msg):
     #  just if msg to delete send with the bot !
 
+    logger.debug('delete message')
     if msg[0].chat is not None:  # check if msg delete in chat user or group
         group = msg[0].chat.id
 
@@ -37,7 +42,10 @@ def delete_message(c, msg):
                     continue
 
             for user in my_dict.keys():
-                c.delete_messages(chat_id=user, message_ids=my_dict[user])
+                try:
+                    c.delete_messages(chat_id=user, message_ids=my_dict[user])
+                except MessageDeleteForbidden as e:
+                    logger.error(e)
 
 
 def get_reply_to_message_by_topic(msg: Message):
@@ -53,6 +61,8 @@ def get_reply_to_message_by_topic(msg: Message):
 
 
 def delete(c: Client, msg: Message):
+
+    logger.debug('delete message in command delete')
     if repository.is_group_exists(group_id=msg.chat.id):
         reply = get_reply_to_message_by_topic(msg)
         try:
@@ -66,6 +76,4 @@ def delete(c: Client, msg: Message):
                 c.delete_messages(chat_id=msg.chat.id, message_ids=msg.reply_to_message.id)
                 c.delete_messages(chat_id=msg.chat.id, message_ids=msg.id)
         except MessageDeleteForbidden as e:
-            print(e)
-
-
+            logger.error(e)

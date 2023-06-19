@@ -1,5 +1,6 @@
 import time
 
+import logging
 from pyrogram import Client, types
 from pyrogram.errors import (BadRequest, InputUserDeactivated, UserIsBlocked,
                              PeerIdInvalid, FloodWait, ChannelPrivate, ChatWriteForbidden,
@@ -9,6 +10,8 @@ from pyrogram.raw.functions import messages as raw_func
 
 import tg.filters
 from db import repository
+
+logger = logging.getLogger(__name__)
 
 
 async def forward_message(cli: Client, msg: Message):
@@ -77,6 +80,7 @@ async def forward_message_from_user(c: Client, msg: Message):
     the message sent by user > forward message to topic
     """
 
+    logger.debug('forward message from user to topic')
     tg_id = msg.from_user.id
     user = repository.get_user_by_tg_id(tg_id=tg_id)
     group = user.group.id
@@ -102,10 +106,12 @@ async def forward_message_from_user(c: Client, msg: Message):
             )
 
         else:
+            # the message not forward with credit > copy message to topic
             reply = get_reply_to_message_by_user(msg=msg)
 
             if msg.poll is not None or msg.venue is not None \
                     or msg.contact is not None or msg.location is not None:
+                # you cant copy this message. you need to send the message exactly as you received it
                 await send_contact_or_poll_or_location(c, msg, int(group), reply, protect=None)
                 return
 
@@ -116,24 +122,23 @@ async def forward_message_from_user(c: Client, msg: Message):
                                       user_msg_id=msg.id, topic_msg_id=forward.id)
 
     except (FloodWait, SlowmodeWait) as e:
+        logger.debug(e)
         time.sleep(e.value)
 
     except (ChannelPrivate, ChatWriteForbidden, ChatAdminRequired,
             ChannelInvalid, Forbidden) as e:
-        print("forward_message_from_user", e)
+        logger.error(e)
 
     except BadRequest as e:
-
         if e.value == '[400 TOPIC_DELETED]':
             # if delete topic > create new topic and forward the message
-
             topic = user.topic.id
             repository.del_topic(topic_id=topic)
             await tg.filters.create_topic(c, msg)
             await forward_message_from_user(c, msg)
 
         else:
-            print("forward_message_from_user", e)
+            logger.error(e)
 
 
 def get_reply_to_message_by_topic(msg: Message) -> int | None:
@@ -160,6 +165,8 @@ def get_reply_to_message_by_topic(msg: Message) -> int | None:
 async def forward_message_from_topic(cli: Client, msg: Message):
     """the message sent in topic > forward message to user"""
 
+    logger.debug('forward message from topic to user')
+
     topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
     tg_user = repository.get_user_by_topic_id(topic_id=topic_id)
     tg_id = tg_user.id
@@ -181,11 +188,12 @@ async def forward_message_from_topic(cli: Client, msg: Message):
                                   user_msg_id=forward.id, topic_msg_id=msg.id)
 
     except (FloodWait, SlowmodeWait) as e:
+        logger.debug(e)
         time.sleep(e.value)
 
     except (InputUserDeactivated, UserIsBlocked, PeerIdInvalid, BadRequest) as e:
+        logger.error(e)
         repository.change_active(tg_id=tg_id, active=False)
-        print(f'forward_message_from_topic {e}')
         await msg.reply(text=e.MESSAGE)
 
 
@@ -236,14 +244,15 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
                                   user_msg_id=msg.id, topic_msg_id=forward.id)
 
     except (FloodWait, SlowmodeWait) as e:
+        logger.debug(e)
         time.sleep(e.value)
 
     except (InputUserDeactivated, UserIsBlocked, PeerIdInvalid) as e:
+        logger.error(e)
         repository.change_active(tg_id=chat, active=False)
-        print(f'forward_message_from_topic {e}')
         await msg.reply(text=e.MESSAGE)
 
     except (ChannelPrivate, ChatWriteForbidden, ChatAdminRequired,
             ChannelInvalid, Forbidden, BadRequest) as e:
-        print("forward_message_from_user", e)
+        logger.error(e)
         return
