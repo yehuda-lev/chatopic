@@ -41,7 +41,7 @@ def main():
 
             set_commands_for_admin(c=app, admin_id=int(admin))
 
-    print(f"Bot {app.name} is up and running!")
+    logger.debug(f"Bot {app.name} is up and running!")
 
     for handler in handlers.HANDLERS:
         app.add_handler(handler)

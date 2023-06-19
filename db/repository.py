@@ -76,7 +76,6 @@ def create_group(*, group_id: int, name: str):
     # print(create_group.__name__)
 
     # create group
-    print(f'added group: name={name}, id={group_id}')
     return TgGroup(id=str(group_id), name=name)
 
 
@@ -215,7 +214,6 @@ def del_all():
     # Warning ⚠
     delete(u for u in TgUser)
     delete(g for g in TgGroup)
-    print('delete all ⚠')
 
 
 @db_session

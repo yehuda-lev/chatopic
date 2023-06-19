@@ -177,6 +177,7 @@ async def create_group(c: Client, update: raw_types.UpdateNewMessage):
         group_name = info.title
 
         repository.create_group(group_id=group_id, name=group_name)  # create group in db
+        logger.debug(f'added group: name={group_name}, id={group_id}')
 
         text = resolve_msg(key='GROUP_ADD') \
             .format(f"[{group_name}](t.me/c/{first_group_id})")
