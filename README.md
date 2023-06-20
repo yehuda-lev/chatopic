@@ -139,4 +139,4 @@
 
 # קרדיט
 הקוד נכתב על ידי
-[@Yehudalev]('https://t.me/Yehualev')
+[@Yehudalev](https://t.me/Yehudalev)
