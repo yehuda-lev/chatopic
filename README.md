@@ -141,7 +141,4 @@
 הקוד נכתב על ידי
 [@Yehudalev](https://t.me/Yehudalev)
 
-[![טלגרם](path/to/telegram.png)](https://t.me/Yehudalev)
-
 </div>
-
