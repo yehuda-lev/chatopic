@@ -1,4 +1,4 @@
-<div dir="rtl">
+<div style="direction: ltr; text-align: left;">
 
 # צאט בוט עם נושאים
 
