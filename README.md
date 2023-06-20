@@ -114,9 +114,9 @@ _לחצו [כאן](#הוראות-התקנה) בכדי לדלג להתקנת הפ
    ```bash
    pip3 install -r requirements.txt
    
-5. העתיקו את קובץ ה `.env_example` וצרו קובץ חדש בשם `.env`
+5. העתיקו את קובץ ה `.env.example` וצרו קובץ חדש בשם `.env`
     ```bash
-   cp .env_example .env
+   cp .env.example .env
 
 6. ערכו את קובץ ה `.env`:
     ```bash
