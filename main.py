@@ -1,5 +1,6 @@
 import logging
 import os
+from logging import handlers
 from pyrogram import Client
 from dotenv import load_dotenv
 from pyrogram.errors import PeerIdInvalid
@@ -15,7 +16,11 @@ load_dotenv()
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.ERROR)
 
-file_handler = logging.FileHandler('your_log_file.log')
+# max bytes file 5 MB
+file_handler = logging.handlers.RotatingFileHandler(
+    filename='my_log.log', maxBytes=5 * 1024 * 1024, backupCount=1, mode='D'
+)
+# file_handler = logging.FileHandler('your_log_file.log')
 file_handler.setLevel(logging.DEBUG)
 
 logging.basicConfig(
