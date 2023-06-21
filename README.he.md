@@ -6,6 +6,11 @@
 על ידי התכתבות בקבוצה שמחולקת לנושאים.
 
 
+---
+[![Switch to English](https://img.shields.io/badge/Go_to_read_in_English._there_is_an_English_version-blue)](README.md)
+
+---
+
 ## תכונות
 
 _לחצו [כאן](#הוראות-התקנה) בכדי לדלג להתקנת הפרויקט_
@@ -98,31 +103,35 @@ _לחצו [כאן](#הוראות-התקנה) בכדי לדלג להתקנת הפ
 1. הריצו בשורת הפקודה:
 
    ```bash
-   git clone https://github.com/yehuda-lev/chat_bot.git
+   git clone https://github.com/yehuda-lev/chatopic.git
    
-2. יצירת סביבת עבודה ויטואלית `venv`:
+2. היכנסו לפרויקט:
+    ```bash
+   cd chatopic
+   
+3. יצירת סביבת עבודה ויטואלית `venv`:
    ```bash
    python3 -m venv venv
    
-3. הפעלת הסביבה הויטואלית:
+4. הפעלת הסביבה הויטואלית:
 
    ```bash
    source venv/bin/activate
    
-4. להתקנת הספריות הנדרשות הריצו את הפקודה:
+5. להתקנת הספריות הנדרשות הריצו את הפקודה:
 
    ```bash
    pip3 install -r requirements.txt
    
-5. העתיקו את קובץ ה `.env.example` וצרו קובץ חדש בשם `.env`
+6. העתיקו את קובץ ה `.env.example` וצרו קובץ חדש בשם `.env`
     ```bash
    cp .env.example .env
 
-6. ערכו את קובץ ה `.env`:
+7. ערכו את קובץ ה `.env`:
     ```bash
    nano .env
    
-7. מלאו את הפרטים הבאים:
+8. מלאו את הפרטים הבאים:
 
    - את ה `API_ID` ואת ה `API_HASH` תוכלו להשיג מ 
    [https://my.telegram.org](https://my.telegram.org)
@@ -131,13 +140,13 @@ _לחצו [כאן](#הוראות-התקנה) בכדי לדלג להתקנת הפ
    - עליכם להכניס את מזהה הטלגרם (ID) של המנהל.
    - בחירת שפה - הבוט תומך בשפה העברית (HE) ובשפה האנגלית (EN).
 
-8. 
+9. 
     בכדי לשמור את הקובץ לחצו `ctrl + s` ולאחר מכן `ctrl + x`
 
-9. הרצת הבוט:
+10. הרצת הבוט:
 
-   ```bash
-   python3 main.py
+    ```bash
+    python3 main.py
 
 # קרדיט
 הקוד נכתב על ידי
