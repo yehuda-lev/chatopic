@@ -1,19 +1,44 @@
 import logging
+import time
 
 from pyrogram import Client
-from pyrogram.errors import MessageDeleteForbidden
+from pyrogram.errors import (MessageDeleteForbidden, FloodWait, SlowmodeWait, ChannelPrivate, ChatWriteForbidden, \
+                             ChatAdminRequired, ChannelInvalid, Forbidden, BadRequest)
 from pyrogram.types import Message
 
 from db import repository
+from tg.strings import resolve_msg
 
 logger = logging.getLogger(__name__)
 
 
-def delete_message(c, msg):
-    #  just if msg to delete send with the bot !
-
+async def delete_message(c: Client, msg: [Message]):
     logger.debug('delete message')
-    if msg[0].chat is not None:  # check if msg delete in chat user or group
+
+    # check if msg delete in chat user or group
+
+    if msg[0].chat is None:  # msg delete in chat user
+        for m in msg:
+            msg_id = repository.get_msg_topic_id_by_user_msg_id(msg_id=m.id)
+            if msg_id is not None:
+                try:
+                    await c.send_message(
+                        chat_id=repository.get_my_group(),
+                        text=resolve_msg(key='MESSAGE_DELETED'),
+                        reply_to_message_id=msg_id
+                    )
+                except (FloodWait, SlowmodeWait) as e:
+                    logger.debug(e)
+                    time.sleep(e.value)
+
+                except (ChannelPrivate, ChatWriteForbidden, ChatAdminRequired,
+                        ChannelInvalid, Forbidden) as e:
+                    logger.error(e)
+
+                except BadRequest as e:
+                    logger.error(e)
+
+    else:  # msg delete in group
         group = msg[0].chat.id
 
         if repository.is_group_exists(group_id=group):
@@ -43,7 +68,7 @@ def delete_message(c, msg):
 
             for user in my_dict.keys():
                 try:
-                    c.delete_messages(chat_id=user, message_ids=my_dict[user])
+                    await c.delete_messages(chat_id=user, message_ids=my_dict[user])
                 except MessageDeleteForbidden as e:
                     logger.error(e)
 
@@ -60,9 +85,9 @@ def get_reply_to_message_by_topic(msg: Message):
     return reply
 
 
-def delete(c: Client, msg: Message):
-
+def command_delete(c: Client, msg: Message):
     logger.debug('delete message in command delete')
+
     if repository.is_group_exists(group_id=msg.chat.id):
         reply = get_reply_to_message_by_topic(msg)
         try:

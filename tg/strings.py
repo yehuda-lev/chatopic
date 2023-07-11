@@ -205,7 +205,11 @@ dictionary = {
     'USER_NOT_EXISTS': {
         'he': 'המשתמש {} אינו קיים',
         'en': 'The user {} is not exists'
-    }
+    },
+    'MESSAGE_DELETED': {
+        'he': 'הודעה זו נמחקה !',
+        'en': 'This message has been deleted !'
+    },
 }
 
 

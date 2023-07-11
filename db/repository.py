@@ -154,6 +154,15 @@ def create_message(tg_id_or_topic_id: int, is_topic_id: bool, user_msg_id: int, 
     return Message(tg_id=str(tg_id), topic_id=topic_id, user_msg_id=user_msg_id, topic_msg_id=topic_msg_id)
 
 
+@db_session
+def get_msg_topic_id_by_user_msg_id(msg_id: int):
+    message = Message.get(user_msg_id=msg_id)
+    if message:
+        return message.topic_msg_id
+    else:
+        return None
+
+
 # @cache.cachable(cache_name='topic_msg_id_by_user_msg_id', params=('tg_id', 'msg_id'))
 @db_session
 def get_topic_msg_id_by_user_msg_id(*, tg_id: int, msg_id: int) -> Optional[int]:
