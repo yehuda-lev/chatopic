@@ -5,11 +5,14 @@
 This bot allows you to chat with people on Telegram conveniently 
 and anonymously by correspondence in the group arranged by topic.
 
+<div dir="rtl">
 
 ---
 [![שנה לעברית](https://img.shields.io/badge/🇮🇱_לחצו_כאן_לקריאה_בעברית_🇮🇱-blue)](README.he.md)
 
 ---
+</div>
+
 
 ## Features
 
@@ -20,6 +23,8 @@ _Click [here](#installation-instructions) to skip to installing the project_
 - Each message sent to the bot is forwarded to the topic associated with the user. And vice versa - every message sent in the group on a subject associated with the user - is transmitted to him in a secure manner so that he does not know who sent the original message
 
 - If a user edits their message, the message will also be edited in the linked topic, and a button will be added indicating that the message has been edited. On the other hand, if an admin edits their message in the group, the message will be edited in the linked chat, but the user will not know that the message was edited.
+
+- If a user deletes his message, the bot will send a message in the group that the user has deleted this message
 
 - If a user sends a message Forward with quotes, it will be forwarded to the group with the credit. In contrast, if an admin sends a message Forward with quotes, it will be forwarded to the user without the credit.
 
