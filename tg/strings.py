@@ -207,8 +207,8 @@ dictionary = {
         'en': 'The user {} is not exists'
     },
     'MESSAGE_DELETED': {
-        'he': 'הודעה זו נמחקה !',
-        'en': 'This message has been deleted !'
+        'he': 'המשתמש מחק את ההודעה הזאת 👆',
+        'en': 'The user has deleted this message 👆'
     },
 }
 
