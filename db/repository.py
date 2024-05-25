@@ -1,244 +1,132 @@
-from typing import Optional
-from pony.orm import db_session, select, delete
-from db.tables import TgGroup, TgTopic, TgUser, Message, Admin
-from cache_memory import MemoryCache
+import logging
+import datetime
+from typing import List
+from db.tables import User, Topic, Message, get_session
 
-cache = MemoryCache()
+_logger = logging.getLogger(__name__)
 
 
-@cache.cachable(cache_name='is_have_a_group')
-@db_session
-def check_if_have_a_group() -> bool:
+def create_user_and_topic(*, tg_id: int, name: str, topic_id: int):
     """
-    check if have a group
-    """
-
-    # print(check_if_have_a_group.__name__)
-    return TgGroup.exists()
-
-
-@cache.cachable(cache_name='group_exists', params='group_id')
-@db_session
-def is_group_exists(*, group_id: int) -> bool:
-    """
-    is group exists
+    Create user and topic
+    :param tg_id: the id of the user
+    :param name: the name of the user and the topic
+    :param topic_id: the id of the topic
     """
 
-    # print(is_group_exists.__name__)
-    return TgGroup.exists(id=str(group_id))
+    _logger.debug(f"create user tg_id:{tg_id}, topic_id:{topic_id}")
+
+    with get_session() as session:
+        topic = Topic(
+            topic_id=topic_id,
+            name=name,
+            created_at=datetime.datetime.now(),
+        )
+        user = User(
+            tg_id=tg_id,
+            name=name,
+            topic=topic,
+            created_at=datetime.datetime.now(),
+        )
+
+        session.add_all((user, topic))
+        session.commit()
 
 
-@cache.cachable(cache_name='admin_exists', params='tg_id')
-@db_session
-def is_admin_exists(*, tg_id: int) -> bool:
+def get_user_by_tg_id(*, tg_id: int) -> User:
     """
-    is admin exists
-    """
-
-    # print(is_admin_exists.__name__)
-    return Admin.exists(id=str(tg_id))
-
-
-@cache.cachable(cache_name='tg_id_exists', params='tg_id')
-@db_session
-def is_tg_id_exists(*, tg_id: int) -> bool:
-    """
-    is tg_id exists
-    """
-
-    # print(is_tg_id_exists.__name__)
-
-    return TgUser.exists(id=str(tg_id))
-
-
-@cache.cachable(cache_name='topic_exists', params='topic_id')
-@db_session
-def is_topic_id_exists(*, topic_id: int) -> bool:
-    """
-    is topic_id exists
+    Get user by tg_id
+    :param tg_id: the id of the user
     """
 
-    # print(is_topic_id_exists.__name__)
-    return TgTopic.exists(id=topic_id)
+    with get_session() as session:
+        return session.query(User).filter(User.tg_id == tg_id).one()
 
 
-@cache.invalidate(cache_name='admin_exists', params='tg_id')
-@db_session
-def create_admin(*, tg_id: int):
-    return Admin(id=str(tg_id))
-
-
-@db_session
-def create_group(*, group_id: int, name: str):
-
-    # del cache
-    cache.delete(cache_name='is_have_a_group')
-    # print(create_group.__name__)
-
-    # create group
-    return TgGroup(id=str(group_id), name=name)
-
-
-@db_session
-def create_user(*, tg_id: int, group_id: int, topic_id: int, name: Optional[str]):
-
-    # del cache
-    cache.delete(cache_name='tg_id_exists', cache_id=cache.build_cache_id(tg_id=tg_id))
-    # print(create_user.__name__)
-
-    # create user
-    tg_group = TgGroup[str(group_id)]
-    topic = TgTopic(id=topic_id, group=str(group_id), name=name)
-    return TgUser(id=str(tg_id), topic=topic, group=str(group_id))
-
-
-@db_session
-def get_my_group() -> None | str:
-    try:
-        return select(i.id for i in TgGroup)[:][0]
-    except IndexError:
-        return None
-
-
-@cache.cachable(cache_name='tg-users', params='tg_id')
-@db_session
-def get_user_by_tg_id(*, tg_id: int) -> TgUser:
+def get_topic_by_topic_id(*, topic_id: int) -> Topic:
     """
-    get TgUser by tg_id
+    Get topic by topic_id
+    :param topic_id: the id of the topic
+    """
+    with get_session() as session:
+        return session.query(Topic).filter(Topic.topic_id == topic_id).one()
+
+
+def update_user(*, user_tg_id: int, **kwargs):
+    """
+    Update user
+    :param user_tg_id: the id of the user to update
+    :param kwargs: the fields to update
+    :return:
     """
 
-    # print(get_user_by_tg_id.__name__)
-    return TgUser.get(id=str(tg_id))
+    _logger.debug(f"update user user_tg_id:{user_tg_id}, kwargs:{kwargs}")
+
+    with get_session() as session:
+        session.query(User).filter(User.tg_id == user_tg_id).update(kwargs)
+        session.commit()
 
 
-@cache.invalidate(cache_name='topic_id-tg_user', params='topic_id')
-@db_session
-def change_protect(*, topic_id: int, is_protect: bool):
-    # print(change_protect.__name__)
-
-    user = TgTopic.get(id=topic_id).user
-    user.protect = is_protect
-
-
-@cache.invalidate(cache_name='topic_id-tg_user', params='topic_id')
-@db_session
-def change_banned(*, topic_id: int, is_banned: bool):
-    # print(change_banned.__name__)
-    user = TgTopic.get(id=topic_id).user
-
-    # del cache
-    tg_id = int(user.id)
-    cache.delete(cache_name='tg-users', cache_id=cache.build_cache_id(tg_id=tg_id))
-
-    user.ban = is_banned
-
-
-@cache.cachable(cache_name='topic_id-tg_user', params='topic_id')
-@db_session
-def get_user_by_topic_id(*, topic_id: int) -> TgUser:
+def update_topic(*, tg_topic_id: int, **kwargs):
     """
-    get TgUser by topic_id
+    Update topic
+    :param tg_topic_id: the id of the topic
+    :param kwargs: the fields to update
+    :return:
     """
 
-    # print(get_user_by_topic_id.__name__)
-    return TgTopic.get(id=topic_id).user
+    _logger.debug(f"update topic tg_topic_id:{tg_topic_id}, kwargs:{kwargs}")
+
+    with get_session() as session:
+        session.query(Topic).filter(Topic.topic_id == tg_topic_id).update(kwargs)
+        session.commit()
 
 
-@db_session
-def create_message(tg_id_or_topic_id: int, is_topic_id: bool, user_msg_id: int, topic_msg_id: int):
-    if is_topic_id:
-        topic_id, tg_id = tg_id_or_topic_id, TgTopic.get(id=tg_id_or_topic_id).user.id
-    else:
-        tg_id, topic_id = tg_id_or_topic_id, TgUser.get(id=str(tg_id_or_topic_id)).topic.id
-
-    return Message(tg_id=str(tg_id), topic_id=topic_id, user_msg_id=user_msg_id, topic_msg_id=topic_msg_id)
+# messages
 
 
-@db_session
-def get_msg_topic_id_by_user_msg_id(msg_id: int):
-    message = Message.get(user_msg_id=msg_id)
-    if message:
-        return message.topic_msg_id
-    else:
-        return None
-
-
-# @cache.cachable(cache_name='topic_msg_id_by_user_msg_id', params=('tg_id', 'msg_id'))
-@db_session
-def get_topic_msg_id_by_user_msg_id(*, tg_id: int, msg_id: int) -> Optional[int]:
+def create_message(*, tg_id: int, topic_id: int, user_msg_id: int, topic_msg_id: int):
     """
-    tg_id + msg_id > topic.msg_id
+    Create message
+    :param tg_id: the id of the user
+    :param topic_id: the id of the topic
+    :param user_msg_id: the id of the message in whatsapp
+    :param topic_msg_id: the id of the message in topic
     """
+    _logger.debug(
+        f"create message tg_id:{tg_id}, topic_id:{topic_id}, user_msg_id:{user_msg_id}, topic_msg_id:{topic_msg_id}"
+    )
+    with get_session() as session:
+        user = session.query(User).filter(User.tg_id == tg_id).one()
+        topic = session.query(Topic).filter(Topic.topic_id == topic_id).one()
+        message = Message(
+            user_msg_id=user_msg_id,
+            topic_msg_id=topic_msg_id,
+            topic=topic,
+            user=user,
+            created_at=datetime.datetime.now(),
+        )
 
-    # print(get_topic_msg_id_by_user_msg_id.__name__)
-    user = Message.get(tg_id=str(tg_id), user_msg_id=msg_id)
-    if user is None:
-        return None
-    return user.topic_msg_id
+        session.add(message)
+        session.commit()
 
 
-@cache.cachable(cache_name='user_by_topic_msg_id', params='msg_id')
-@db_session
-def get_user_by_topic_msg_id(*, msg_id: int) -> Message:
+def get_message(*, topic_msg_id: int | None, user_msg_id: str | None) -> Message:
     """
-    msg_id (topic) > message
+    Get message by topic_msg_id or user_msg_id
+    :param topic_msg_id: the id of the message in topic
+    :param user_msg_id: the id of the message in the bot
+    :return: the message
     """
-
-    # print(get_user_by_topic_msg_id.__name__)
-    return Message.get(topic_msg_id=msg_id)
-
-
-@cache.cachable(cache_name='is_active', params='tg_id')
-@db_session
-def is_user_active(*, tg_id: int) -> bool:
-    # print(is_user_active.__name__)
-
-    return TgUser.get(id=str(tg_id)).active
+    with get_session() as session:
+        return (
+            session.query(Message)
+            .filter((Message.topic_msg_id == topic_msg_id) if topic_msg_id else True)
+            .filter((Message.user_msg_id == user_msg_id) if user_msg_id else True)
+            .one()
+        )
 
 
-@cache.invalidate(cache_name='is_active', params='tg_id')
-@db_session
-def change_active(*, tg_id: int, active: bool):
-    # print(change_active.__name__)
-
-    user = TgUser.get(id=str(tg_id))
-    user.active = active
-
-
-@db_session
-def get_all_users() -> list[int]:
-    return select(int(i.id) for i in TgUser if not i.ban and i.active)[:]
-
-
-@db_session
-def del_all():
-    """
-    delete all DB
-    """
-
-    # del cache
-    cache.clear()
-    # print(del_all.__name__)
-
-    # Warning ⚠
-    delete(u for u in TgUser)
-    delete(g for g in TgGroup)
-
-
-@db_session
-def del_topic(*, topic_id: int):
-    """
-    delete topic and user
-    """
-
-    topic = TgTopic.get(id=topic_id)
-    user = topic.user
-
-    # del cache
-    cache.delete(cache_name='tg-users', cache_id=cache.build_cache_id(tg_id=int(user.id)))
-    cache.delete(cache_name='tg_id_exists', cache_id=cache.build_cache_id(tg_id=int(user.id)))
-
-    user.delete()
-
-    topic.delete()
-
+def get_all_users_active() -> List[User]:
+    with get_session() as session:
+        return session.query(User).filter(User.active == True).all()  # noqa

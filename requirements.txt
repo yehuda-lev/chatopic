@@ -1,4 +1,4 @@
-pony==0.7.16
+SQLAlchemy==2.0.30
 pyrogram==2.0.102
 tgcrypto==1.2.5
 python-dotenv~=1.0.0

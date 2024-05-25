@@ -1,48 +1,92 @@
-from pony.orm import (Database, Required, Optional, PrimaryKey, Set)
+# This file contains the database tables and their relationships
 
-db = Database()
-
-
-class Admin(db.Entity):
-    _table_ = 'admin'
-    id = PrimaryKey(str)
-
-
-class TgGroup(db.Entity):
-    _table_ = 'tg_group'
-    id = PrimaryKey(str)
-    name = Optional(str)
-    topics = Set(lambda: TgTopic, reverse='group')
-    admins = Set(lambda: TgUser, reverse='group')
+from __future__ import annotations
+import logging
+import datetime
+from contextlib import contextmanager
+from sqlalchemy import String, create_engine, ForeignKey, UniqueConstraint
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+    DeclarativeBase,
+    sessionmaker,
+    relationship,
+)
 
 
-class TgTopic(db.Entity):
-    _table_ = 'tg_topic'
-    id = PrimaryKey(int)
-    group = Required(TgGroup, reverse='topics')
-    name = Required(str)
-    user = Optional(lambda: TgUser, reverse='topic')
-    messages = Set(lambda: Message, reverse='topic_id')
+_logger = logging.getLogger(__name__)
 
 
-class TgUser(db.Entity):
-    _table_ = 'tg_user'
-    id = PrimaryKey(str)
-    active = Required(bool, default=True)
-    protect = Required(bool, default=False)
-    ban = Required(bool, default=False)
-    topic = Required(TgTopic, reverse='user')
-    group = Optional(TgGroup, reverse='admins')
-    messages = Set(lambda: Message, reverse='tg_id')
+engine = create_engine(
+    url="sqlite:///bot_db.sqlite",
+    pool_size=20,
+    max_overflow=10,
+    pool_timeout=30,
+)
+
+Session = sessionmaker(bind=engine)
 
 
-class Message(db.Entity):
-    _table_ = 'tg_message'
-    tg_id = Required(TgUser)
-    topic_id = Required(TgTopic)
-    user_msg_id = Required(int)
-    topic_msg_id = Required(int)
+@contextmanager
+def get_session() -> Session:
+    """Get session"""
+    new_session = Session()
+    try:
+        yield new_session
+    finally:
+        new_session.close()
 
 
-db.bind(provider='sqlite', filename='chat_bot.sqlite', create_db=True)
-db.generate_mapping(create_tables=True)
+class BaseTable(DeclarativeBase):
+    pass
+
+
+class User(BaseTable):
+    """User details"""
+
+    __tablename__ = "user"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tg_id: Mapped[int] = mapped_column(unique=True)
+    name: Mapped[str] = mapped_column(String(32))
+    username: Mapped[str | None] = mapped_column(String(32))
+    language_code: Mapped[str | None] = mapped_column(String(5))
+    created_at: Mapped[datetime.datetime]
+    active: Mapped[bool] = mapped_column(default=True)
+    admin: Mapped[bool] = mapped_column(default=False)
+    topic: Mapped[Topic] = relationship(back_populates="user", lazy="joined")
+    messages: Mapped[list[Message]] = relationship(back_populates="user")
+
+    __table_args__ = (UniqueConstraint("topic_id"),)
+
+
+class Topic(BaseTable):
+    """Topic details"""
+
+    __tablename__ = "topic"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    topic_id: Mapped[int] = mapped_column(unique=True)
+    name: Mapped[str] = mapped_column(String(30))
+    created_at: Mapped[datetime.datetime]
+    user: Mapped[User] = relationship(back_populates="topic", lazy="joined")
+    messages: Mapped[list[Message]] = relationship(back_populates="topic")
+
+
+class Message(BaseTable):
+    """Message details"""
+
+    __tablename__ = "message"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    topic_msg_id: Mapped[int] = mapped_column(unique=True)
+    user_msg_id: Mapped[str] = mapped_column(unique=True)
+    created_at: Mapped[datetime.datetime]
+
+    topic_id: Mapped[int] = mapped_column(ForeignKey("topic.id"))
+    topic: Mapped[Topic] = relationship(back_populates="messages", lazy="joined")
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    user: Mapped[User] = relationship(back_populates="messages", lazy="joined")
+
+
+BaseTable.metadata.create_all(engine)
