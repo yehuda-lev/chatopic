@@ -53,6 +53,7 @@ class User(BaseTable):
     language_code: Mapped[str | None] = mapped_column(String(5))
     created_at: Mapped[datetime.datetime]
     active: Mapped[bool] = mapped_column(default=True)
+    banned: Mapped[bool] = mapped_column(default=False)
     admin: Mapped[bool] = mapped_column(default=False)
     topic: Mapped[Topic] = relationship(back_populates="user", lazy="joined")
     messages: Mapped[list[Message]] = relationship(back_populates="user")

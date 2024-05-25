@@ -1,154 +1,115 @@
-import time
-
+import asyncio
 import logging
 
-from pyrogram import Client
-from pyrogram.enums import MessageEntityType
-from pyrogram.errors import (ButtonUserPrivacyRestricted, ChatWriteForbidden,
-                             Forbidden, ChatAdminRequired, FloodWait)
-from pyrogram.raw import functions
-from pyrogram.types import Message, ForceReply, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram import Client, filters, enums, errors, raw, types
+from sqlalchemy.exc import NoResultFound
 
 from db import repository
 from tg.strings import resolve_msg
+from data import config
 
 logger = logging.getLogger(__name__)
 
+settings = config.get_settings()
 
-def is_banned(_, __, msg: Message):
+
+async def create_user() -> filters.Filter:
     """
-    filter to check if user is banned or not
+    Create user and topic
     """
 
-    logger.debug('checking if user is banned or not')
-    try:
+    async def func(_, client: Client, msg: types.Message) -> bool:
+
         tg_id = msg.from_user.id
-    except AttributeError:
-        return False
 
-    if msg.chat.id == tg_id:
-        if repository.get_user_by_tg_id(tg_id=tg_id).ban:
-            return False
-    else:
-        topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
-        if repository.get_user_by_topic_id(topic_id=topic_id).ban:
-            msg.reply(resolve_msg(key='USER_IS_BANNED'))
-            return False
-    return True
+        try:
+            user = repository.get_user_by_tg_id(tg_id=tg_id)
+            if not user.active:
+                repository.update_user(user_tg_id=tg_id, active=True)
+            if user.banned:
+                return False
+        except NoResultFound:
+            return await create_topic(client, msg)
 
-
-async def is_user_exists(_, c: Client, msg: Message):
-    """
-    filter to check if user exists. if not exists >
-    create topic for user and create topic in the DB
-    """
-
-    logger.debug('check if user exists. if not,create user')
-    try:
-        tg_id = msg.from_user.id
-    except AttributeError:
         return True
 
-    if tg_id != msg.chat.id:  # check if msg sent in group
-        return True
-
-    if repository.is_tg_id_exists(tg_id=tg_id):
-        if repository.is_user_active(tg_id=tg_id):
-            return True
-        else:
-            repository.change_active(tg_id=tg_id, active=True)
-    else:
-        create = await create_topic(cli=c, msg=msg)
-        return create
-
-    return True
+    return filters.create(func, "Create user")
 
 
-async def create_topic(cli: Client, msg: Message):
+async def create_topic(client: Client, msg: types.Message):
     """
-    func to create topic in group for the user
+    Create topic
     """
 
-    name = msg.from_user.first_name + (" " + last if (last := msg.from_user.last_name) else "")
-    username = "@" + str(username) if (username := msg.from_user.username) else "❌"
+    name = msg.from_user.full_name
+    tg_id = msg.from_user.id
+    username = f"@{username}" if (username := msg.from_user.username) else "❌"
+    group_id = settings.tg_group_topic_id
 
     try:
         # create topic
-        peer = await cli.resolve_peer(int(repository.get_my_group()))
-        create = await cli.invoke(functions.channels.CreateForumTopic(
-            channel=peer,
-            title=name,
-            random_id=1000000,
-            icon_color=None,
-            icon_emoji_id=5312016608254762256,
-            send_as=None
-        )
+        topic = await client.create_forum_topic(
+            chat_id=group_id,
+            name=f"{name} | {tg_id}",
         )
 
-    except (ChatWriteForbidden, Forbidden) as e:
+    except (errors.ChatWriteForbidden, errors.Forbidden) as e:
         logger.error(e)
         return False
 
-    tg_id = msg.from_user.id
-    group_id, topic_id = int("-100" + str(create.updates[1].message.peer_id.channel_id)), \
-        create.updates[1].message.id
-    repository.create_user(tg_id=tg_id, group_id=group_id, topic_id=topic_id, name=name)
+    repository.create_user_and_topic(tg_id=tg_id, name=name, topic_id=topic.id)
 
-    # time.sleep(0.3)
+    await asyncio.sleep(0.3)
 
     text = resolve_msg(key='INFO_TOPIC'). \
-        format(f"[{name}](tg://user?id={msg.from_user.id})", f"{username}", f"{msg.from_user.id}",
-               f"{msg.from_user.id}", f"{msg.from_user.id}")
+        format(f"[{name}](tg://user?id={tg_id})", f"{username}", f"{tg_id}",
+               f"{tg_id}", f"{tg_id}")
 
     # check if user have a photo
     photo = photo if (photo := msg.from_user.photo) else None
 
-    chat_id = int("-100" + str(create.updates[1].message.peer_id.channel_id))
+    reply_markup = types.InlineKeyboardMarkup(
+                        [
+                            [types.InlineKeyboardButton(text=name, user_id=tg_id)]
+                        ]
+                    )
+    privacy = False
+    send = None
 
-    # try:
-    try:
-        if photo is None:  # if not have a photo > send text
-            send = await cli.send_message(chat_id=chat_id, text=text,
-                                          reply_to_message_id=create.updates[1].message.id,
-                                          reply_markup=InlineKeyboardMarkup([[
-                                              InlineKeyboardButton(text=name, user_id=msg.from_user.id)]]))
-
-        else:  # if user have a photo > send photo + text
-            async for photo in cli.get_chat_photos(msg.from_user.id, limit=1):
-                send = await cli.send_photo(chat_id=chat_id, photo=photo.file_id,
-                                            caption=text, reply_to_message_id=create.updates[1].message.id,
-                                            reply_markup=InlineKeyboardMarkup([[
-                                                InlineKeyboardButton(text=name, user_id=msg.from_user.id)]]))
-    except FloodWait as e:
-        logger.debug(e)
-        time.sleep(e.value)
-
-    except ButtonUserPrivacyRestricted:
+    while True:
         try:
             if photo is None:  # if not have a photo > send text
-                send = await cli.send_message(chat_id=chat_id, text=text,
-                                              reply_to_message_id=create.updates[1].message.id)
+                send = await client.send_message(
+                    chat_id=group_id, text=text,
+                    reply_parameters=types.ReplyParameters(message_id=topic.id),
+                    reply_markup=reply_markup if not privacy else None
+                )
 
-            else:  # if user have a photo > send photo + text
-                async for photo in cli.get_chat_photos(msg.from_user.id, limit=1):
-                    send = await cli.send_photo(chat_id=chat_id, photo=photo.file_id,
-                                                caption=text,
-                                                reply_to_message_id=create.updates[1].message.id)
-        except FloodWait as e:
-            logger.debug(e)
-            time.sleep(e.value)
+            else:
+                async for photo in client.get_chat_photos(tg_id, limit=1):
+                    send = await client.send_photo(
+                        chat_id=group_id, photo=await photo.download(in_memory=True),
+                        caption=text, reply_parameters=types.ReplyParameters(message_id=topic.id),
+                        reply_markup=reply_markup if not privacy else None
+                    )
+            break
+
+        except errors.FloodWait as e:
+            logger.debug(f"FloodWait when send message create_topic: {e.value}")
+            await asyncio.sleep(e.value)
+            continue
+
+        except errors.ButtonUserPrivacyRestricted:
+            privacy = True
+            continue
 
     try:
         # pinned the message
-        await cli.unpin_chat_message(chat_id=chat_id, message_id=send.id)
-        await cli.pin_chat_message(chat_id=chat_id, message_id=send.id)
-    except ChatAdminRequired as e:
-        logger.error(e)
-        return False
-
-    except FloodWait as e:
+        await client.unpin_chat_message(chat_id=group_id, message_id=send.id)
+        await client.pin_chat_message(chat_id=group_id, message_id=send.id)
+    except errors.FloodWait as e:
         logger.debug(e)
-        time.sleep(e.value)
+        await asyncio.sleep(e.value)
 
     return True
 
