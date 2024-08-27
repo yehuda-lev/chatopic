@@ -2,7 +2,12 @@ import logging
 
 from pyrogram import Client
 from pyrogram import types
-from pyrogram.errors import MessageIdInvalid, MessageNotModified, ChannelPrivate, BadRequest
+from pyrogram.errors import (
+    MessageIdInvalid,
+    MessageNotModified,
+    ChannelPrivate,
+    BadRequest,
+)
 from pyrogram.types import CallbackQuery
 
 from db import repository
@@ -33,7 +38,7 @@ async def edit_message_by_user(cli: Client, msg: types.Message):
     the user edit message > edit message in topic
     """
 
-    logger.debug('user edit message')
+    logger.debug("user edit message")
     tg_id = msg.from_user.id
     chat_id = repository.get_user_by_tg_id(tg_id=tg_id).group.id
 
@@ -43,15 +48,20 @@ async def edit_message_by_user(cli: Client, msg: types.Message):
     await edit_message(cli, msg, chat_id, msg_id, is_topic=True)
 
 
-async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topic: bool):
+async def edit_message(
+    cli: Client, msg: types.Message, chat_id, msg_id, is_topic: bool
+):
     """edit message in chat_id"""
 
-    logger.debug('edit message')
+    logger.debug("edit message")
     if msg.text:  # not caption
         try:
             await cli.edit_message_text(
-                chat_id=chat_id, message_id=msg_id, text=msg.text, entities=msg.entities,
-                reply_markup=get_reply_markup(msg, is_topic)
+                chat_id=chat_id,
+                message_id=msg_id,
+                text=msg.text,
+                entities=msg.entities,
+                reply_markup=get_reply_markup(msg, is_topic),
             )
 
         except (MessageIdInvalid, MessageNotModified) as e:
@@ -79,8 +89,11 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topi
 
     try:
         await cli.edit_message_media(
-            chat_id=chat_id, message_id=msg_id, media=media,
-            reply_markup=get_reply_markup(msg, is_topic))
+            chat_id=chat_id,
+            message_id=msg_id,
+            media=media,
+            reply_markup=get_reply_markup(msg, is_topic),
+        )
 
     except (MessageIdInvalid, MessageNotModified) as e:
         logger.debug(e)
@@ -89,7 +102,9 @@ async def edit_message(cli: Client, msg: types.Message, chat_id, msg_id, is_topi
     return
 
 
-def get_reply_markup(msg: types.Message, is_topic: bool) -> types.InlineKeyboardMarkup | None:
+def get_reply_markup(
+    msg: types.Message, is_topic: bool
+) -> types.InlineKeyboardMarkup | None:
     """
     return InlineKeyboardButton URL (and EDIT if is_topic)
     if msg is instance InlineKeyboardButton URL else return None
@@ -97,11 +112,18 @@ def get_reply_markup(msg: types.Message, is_topic: bool) -> types.InlineKeyboard
     """
 
     if isinstance(msg.reply_markup, types.InlineKeyboardMarkup):
-
-        if any(True if b.url is not None else False for a in msg.reply_markup.inline_keyboard for b in a):
+        if any(
+            True if b.url is not None else False
+            for a in msg.reply_markup.inline_keyboard
+            for b in a
+        ):
             #  if InlineKeyboardButton is url
-            reply_markup = [[types.InlineKeyboardButton(text=b.text, url=b.url)]
-                            for a in msg.reply_markup.inline_keyboard for b in a if b.url is not None]
+            reply_markup = [
+                [types.InlineKeyboardButton(text=b.text, url=b.url)]
+                for a in msg.reply_markup.inline_keyboard
+                for b in a
+                if b.url is not None
+            ]
         else:
             reply_markup = None
     else:
@@ -109,12 +131,22 @@ def get_reply_markup(msg: types.Message, is_topic: bool) -> types.InlineKeyboard
 
     if is_topic:
         if reply_markup is None:
-            reply_markup = [[types.InlineKeyboardButton(
-                text=resolve_msg(key='EDIT'), callback_data='edit')]]
+            reply_markup = [
+                [
+                    types.InlineKeyboardButton(
+                        text=resolve_msg(key="EDIT"), callback_data="edit"
+                    )
+                ]
+            ]
 
         else:
-            reply_markup.append([types.InlineKeyboardButton(
-                text=resolve_msg(key='EDIT'), callback_data='edit')])
+            reply_markup.append(
+                [
+                    types.InlineKeyboardButton(
+                        text=resolve_msg(key="EDIT"), callback_data="edit"
+                    )
+                ]
+            )
 
     if reply_markup is not None:
         reply_markup = types.InlineKeyboardMarkup(reply_markup)
@@ -123,7 +155,7 @@ def get_reply_markup(msg: types.Message, is_topic: bool) -> types.InlineKeyboard
 
 
 def answer_the_message_is_edited(_, cbd: CallbackQuery):
-    cbd.answer(text=resolve_msg(key='EDIT_CBD'), show_alert=True)
+    cbd.answer(text=resolve_msg(key="EDIT_CBD"), show_alert=True)
 
 
 async def edit_message_by_topic(cli: Client, msg: types.Message):
@@ -131,10 +163,8 @@ async def edit_message_by_topic(cli: Client, msg: types.Message):
     the message edit in topic > edit message in the user
     """
 
-    logger.debug('message edit in topic')
-    tg_user = repository.get_user_by_topic_msg_id(
-        msg_id=msg.id
-    )
+    logger.debug("message edit in topic")
+    tg_user = repository.get_user_by_topic_msg_id(msg_id=msg.id)
 
     try:
         chat_id = int(tg_user.tg_id.id)

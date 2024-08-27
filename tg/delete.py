@@ -2,8 +2,17 @@ import logging
 import time
 
 from pyrogram import Client
-from pyrogram.errors import (MessageDeleteForbidden, FloodWait, SlowmodeWait, ChannelPrivate, ChatWriteForbidden, \
-                             ChatAdminRequired, ChannelInvalid, Forbidden, BadRequest)
+from pyrogram.errors import (
+    MessageDeleteForbidden,
+    FloodWait,
+    SlowmodeWait,
+    ChannelPrivate,
+    ChatWriteForbidden,
+    ChatAdminRequired,
+    ChannelInvalid,
+    Forbidden,
+    BadRequest,
+)
 from pyrogram.types import Message
 
 from db import repository
@@ -13,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 async def delete_message(c: Client, msg: [Message]):
-    logger.debug('delete message')
+    logger.debug("delete message")
 
     # check if msg delete in chat user or group
 
@@ -24,15 +33,20 @@ async def delete_message(c: Client, msg: [Message]):
                 try:
                     await c.send_message(
                         chat_id=repository.get_my_group(),
-                        text=resolve_msg(key='MESSAGE_DELETED'),
-                        reply_to_message_id=msg_id
+                        text=resolve_msg(key="MESSAGE_DELETED"),
+                        reply_to_message_id=msg_id,
                     )
                 except (FloodWait, SlowmodeWait) as e:
                     logger.debug(e)
                     time.sleep(e.value)
 
-                except (ChannelPrivate, ChatWriteForbidden, ChatAdminRequired,
-                        ChannelInvalid, Forbidden) as e:
+                except (
+                    ChannelPrivate,
+                    ChatWriteForbidden,
+                    ChatAdminRequired,
+                    ChannelInvalid,
+                    Forbidden,
+                ) as e:
                     logger.error(e)
 
                 except BadRequest as e:
@@ -42,10 +56,8 @@ async def delete_message(c: Client, msg: [Message]):
         group = msg[0].chat.id
 
         if repository.is_group_exists(group_id=group):
-
             and_messages = msg[-1].id  # check if delete topic or some messages
             if repository.is_topic_id_exists(topic_id=and_messages):
-
                 # if user banned > return
                 if repository.get_user_by_topic_id(topic_id=and_messages).ban:
                     return
@@ -54,7 +66,9 @@ async def delete_message(c: Client, msg: [Message]):
                 return
 
             del_ids = [i.id for i in msg]  # list of id to msg delete
-            msg_ids = [repository.get_user_by_topic_msg_id(msg_id=i) for i in del_ids]  # list of Message (DB)
+            msg_ids = [
+                repository.get_user_by_topic_msg_id(msg_id=i) for i in del_ids
+            ]  # list of Message (DB)
 
             my_dict = {}
             for msg in msg_ids:  # create dict{tg_id: [msg_id]}
@@ -86,19 +100,27 @@ def get_reply_to_message_by_topic(msg: Message):
 
 
 def command_delete(c: Client, msg: Message):
-    logger.debug('delete message in command delete')
+    logger.debug("delete message in command delete")
 
     if repository.is_group_exists(group_id=msg.chat.id):
         reply = get_reply_to_message_by_topic(msg)
         try:
             if reply:
-                topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
+                topic_id = (
+                    topic
+                    if (topic := msg.reply_to_top_message_id)
+                    else msg.reply_to_message_id
+                )
                 tg_id = int(repository.get_user_by_topic_id(topic_id=topic_id).id)
                 c.delete_messages(chat_id=tg_id, message_ids=reply)
-                c.delete_messages(chat_id=msg.chat.id, message_ids=msg.reply_to_message.id)
+                c.delete_messages(
+                    chat_id=msg.chat.id, message_ids=msg.reply_to_message.id
+                )
                 c.delete_messages(chat_id=msg.chat.id, message_ids=msg.id)
             else:
-                c.delete_messages(chat_id=msg.chat.id, message_ids=msg.reply_to_message.id)
+                c.delete_messages(
+                    chat_id=msg.chat.id, message_ids=msg.reply_to_message.id
+                )
                 c.delete_messages(chat_id=msg.chat.id, message_ids=msg.id)
         except MessageDeleteForbidden as e:
             logger.error(e)

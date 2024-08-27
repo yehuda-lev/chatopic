@@ -2,9 +2,19 @@ import time
 
 import logging
 from pyrogram import Client, types
-from pyrogram.errors import (BadRequest, InputUserDeactivated, UserIsBlocked,
-                             PeerIdInvalid, FloodWait, ChannelPrivate, ChatWriteForbidden,
-                             ChatAdminRequired, Forbidden, ChannelInvalid, SlowmodeWait)
+from pyrogram.errors import (
+    BadRequest,
+    InputUserDeactivated,
+    UserIsBlocked,
+    PeerIdInvalid,
+    FloodWait,
+    ChannelPrivate,
+    ChatWriteForbidden,
+    ChatAdminRequired,
+    Forbidden,
+    ChannelInvalid,
+    SlowmodeWait,
+)
 from pyrogram.types import Message
 from pyrogram.raw.functions import messages as raw_func
 
@@ -44,7 +54,8 @@ def get_reply_to_message_by_user(msg: Message) -> int:
     tg_id = msg.from_user.id
     if msg.reply_to_message:
         is_reply = repository.get_topic_msg_id_by_user_msg_id(
-            tg_id=tg_id, msg_id=msg.reply_to_message.id)
+            tg_id=tg_id, msg_id=msg.reply_to_message.id
+        )
 
         if is_reply is not None:
             reply = is_reply
@@ -61,12 +72,20 @@ def get_reply_markup(msg: Message) -> types.InlineKeyboardMarkup | None:
     """
 
     if isinstance(msg.reply_markup, types.InlineKeyboardMarkup):
-
-        if any(True if b.url is not None else False for a in msg.reply_markup.inline_keyboard for b in a):
+        if any(
+            True if b.url is not None else False
+            for a in msg.reply_markup.inline_keyboard
+            for b in a
+        ):
             #  if InlineKeyboardButton is url
             reply_markup = types.InlineKeyboardMarkup(
-                [[types.InlineKeyboardButton(text=b.text, url=b.url)]
-                 for a in msg.reply_markup.inline_keyboard for b in a if b.url is not None])
+                [
+                    [types.InlineKeyboardButton(text=b.text, url=b.url)]
+                    for a in msg.reply_markup.inline_keyboard
+                    for b in a
+                    if b.url is not None
+                ]
+            )
         else:
             reply_markup = None
     else:
@@ -80,16 +99,18 @@ async def forward_message_from_user(c: Client, msg: Message):
     the message sent by user > forward message to topic
     """
 
-    logger.debug('forward message from user to topic')
+    logger.debug("forward message from user to topic")
     tg_id = msg.from_user.id
     user = repository.get_user_by_tg_id(tg_id=tg_id)
     group = user.group.id
 
     try:
         # if msg forward with credit > forward to topic with credit
-        if msg.forward_from is not None or msg.forward_from_chat is not None or \
-                msg.forward_sender_name is not None:
-
+        if (
+            msg.forward_from is not None
+            or msg.forward_from_chat is not None
+            or msg.forward_sender_name is not None
+        ):
             topic = user.topic.id
             peer_user = await c.resolve_peer(msg.from_user.id)
             peer_group = await c.resolve_peer(group)
@@ -101,7 +122,7 @@ async def forward_message_from_user(c: Client, msg: Message):
                     drop_author=False,
                     id=[msg.id],
                     to_peer=peer_group,
-                    top_msg_id=topic
+                    top_msg_id=topic,
                 )
             )
 
@@ -109,28 +130,45 @@ async def forward_message_from_user(c: Client, msg: Message):
             # the message not forward with credit > copy message to topic
             reply = get_reply_to_message_by_user(msg=msg)
 
-            if msg.poll is not None or msg.venue is not None \
-                    or msg.contact is not None or msg.location is not None:
+            if (
+                msg.poll is not None
+                or msg.venue is not None
+                or msg.contact is not None
+                or msg.location is not None
+            ):
                 # you cant copy this message. you need to send the message exactly as you received it
-                await send_contact_or_poll_or_location(c, msg, int(group), reply, protect=None)
+                await send_contact_or_poll_or_location(
+                    c, msg, int(group), reply, protect=None
+                )
                 return
 
             reply_markup = get_reply_markup(msg=msg)
 
-            forward = await msg.copy(chat_id=int(group), reply_to_message_id=reply, reply_markup=reply_markup)
-            repository.create_message(tg_id_or_topic_id=tg_id, is_topic_id=False,
-                                      user_msg_id=msg.id, topic_msg_id=forward.id)
+            forward = await msg.copy(
+                chat_id=int(group), reply_to_message_id=reply, reply_markup=reply_markup
+            )
+            repository.create_message(
+                tg_id_or_topic_id=tg_id,
+                is_topic_id=False,
+                user_msg_id=msg.id,
+                topic_msg_id=forward.id,
+            )
 
     except (FloodWait, SlowmodeWait) as e:
         logger.debug(e)
         time.sleep(e.value)
 
-    except (ChannelPrivate, ChatWriteForbidden, ChatAdminRequired,
-            ChannelInvalid, Forbidden) as e:
+    except (
+        ChannelPrivate,
+        ChatWriteForbidden,
+        ChatAdminRequired,
+        ChannelInvalid,
+        Forbidden,
+    ) as e:
         logger.error(e)
 
     except BadRequest as e:
-        if e.value == '[400 TOPIC_DELETED]':
+        if e.value == "[400 TOPIC_DELETED]":
             # if delete topic > create new topic and forward the message
             topic = user.topic.id
             repository.del_topic(topic_id=topic)
@@ -165,27 +203,42 @@ def get_reply_to_message_by_topic(msg: Message) -> int | None:
 async def forward_message_from_topic(cli: Client, msg: Message):
     """the message sent in topic > forward message to user"""
 
-    logger.debug('forward message from topic to user')
+    logger.debug("forward message from topic to user")
 
-    topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
+    topic_id = (
+        topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
+    )
     tg_user = repository.get_user_by_topic_id(topic_id=topic_id)
     tg_id = tg_user.id
     is_protect = tg_user.protect
     reply = get_reply_to_message_by_topic(msg=msg)
 
     try:
-        if msg.poll is not None or msg.venue is not None \
-                or msg.contact is not None or msg.location is not None:
-            await send_contact_or_poll_or_location(c=cli, msg=msg, chat=tg_id,
-                                                   reply=reply, protect=is_protect)
+        if (
+            msg.poll is not None
+            or msg.venue is not None
+            or msg.contact is not None
+            or msg.location is not None
+        ):
+            await send_contact_or_poll_or_location(
+                c=cli, msg=msg, chat=tg_id, reply=reply, protect=is_protect
+            )
             return
 
         reply_markup = get_reply_markup(msg=msg)
 
-        forward = await msg.copy(chat_id=tg_id, reply_to_message_id=reply,
-                                 protect_content=is_protect, reply_markup=reply_markup)
-        repository.create_message(tg_id_or_topic_id=topic_id, is_topic_id=True,
-                                  user_msg_id=forward.id, topic_msg_id=msg.id)
+        forward = await msg.copy(
+            chat_id=tg_id,
+            reply_to_message_id=reply,
+            protect_content=is_protect,
+            reply_markup=reply_markup,
+        )
+        repository.create_message(
+            tg_id_or_topic_id=topic_id,
+            is_topic_id=True,
+            user_msg_id=forward.id,
+            topic_msg_id=msg.id,
+        )
 
     except (FloodWait, SlowmodeWait) as e:
         logger.debug(e)
@@ -197,7 +250,9 @@ async def forward_message_from_topic(cli: Client, msg: Message):
         await msg.reply(text=e.MESSAGE)
 
 
-async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, reply: int | None, protect: bool | None):
+async def send_contact_or_poll_or_location(
+    c: Client, msg: Message, chat: int, reply: int | None, protect: bool | None
+):
     try:
         if msg.contact is not None:
             # Handle contact message
@@ -207,7 +262,7 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
                 first_name=msg.contact.first_name,
                 last_name=msg.contact.last_name,
                 reply_to_message_id=reply,
-                protect_content=protect
+                protect_content=protect,
             )
 
         elif msg.location is not None:
@@ -217,7 +272,7 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
                 latitude=msg.location.latitude,
                 longitude=msg.location.longitude,
                 reply_to_message_id=reply,
-                protect_content=protect
+                protect_content=protect,
             )
 
         elif msg.poll is not None:
@@ -227,7 +282,7 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
                 question=msg.poll.question,
                 options=[o.text for o in msg.poll.options],
                 reply_to_message_id=reply,
-                protect_content=protect
+                protect_content=protect,
             )
 
         else:  # venue
@@ -237,11 +292,15 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
                 latitude=msg.venue.location.latitude,
                 longitude=msg.venue.location.longitude,
                 reply_to_message_id=reply,
-                protect_content=protect
+                protect_content=protect,
             )
 
-        repository.create_message(tg_id_or_topic_id=chat, is_topic_id=False,
-                                  user_msg_id=msg.id, topic_msg_id=forward.id)
+        repository.create_message(
+            tg_id_or_topic_id=chat,
+            is_topic_id=False,
+            user_msg_id=msg.id,
+            topic_msg_id=forward.id,
+        )
 
     except (FloodWait, SlowmodeWait) as e:
         logger.debug(e)
@@ -252,7 +311,13 @@ async def send_contact_or_poll_or_location(c: Client, msg: Message, chat: int, r
         repository.change_active(tg_id=chat, active=False)
         await msg.reply(text=e.MESSAGE)
 
-    except (ChannelPrivate, ChatWriteForbidden, ChatAdminRequired,
-            ChannelInvalid, Forbidden, BadRequest) as e:
+    except (
+        ChannelPrivate,
+        ChatWriteForbidden,
+        ChatAdminRequired,
+        ChannelInvalid,
+        Forbidden,
+        BadRequest,
+    ) as e:
         logger.error(e)
         return

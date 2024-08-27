@@ -19,7 +19,6 @@ async def create_user() -> filters.Filter:
     """
 
     async def func(_, client: Client, msg: types.Message) -> bool:
-
         tg_id = msg.from_user.id
 
         try:
@@ -61,18 +60,20 @@ async def create_topic(client: Client, msg: types.Message):
 
     await asyncio.sleep(0.3)
 
-    text = resolve_msg(key='INFO_TOPIC'). \
-        format(f"[{name}](tg://user?id={tg_id})", f"{username}", f"{tg_id}",
-               f"{tg_id}", f"{tg_id}")
+    text = resolve_msg(key="INFO_TOPIC").format(
+        f"[{name}](tg://user?id={tg_id})",
+        f"{username}",
+        f"{tg_id}",
+        f"{tg_id}",
+        f"{tg_id}",
+    )
 
     # check if user have a photo
     photo = photo if (photo := msg.from_user.photo) else None
 
     reply_markup = types.InlineKeyboardMarkup(
-                        [
-                            [types.InlineKeyboardButton(text=name, user_id=tg_id)]
-                        ]
-                    )
+        [[types.InlineKeyboardButton(text=name, user_id=tg_id)]]
+    )
     privacy = False
     send = None
 
@@ -80,17 +81,20 @@ async def create_topic(client: Client, msg: types.Message):
         try:
             if photo is None:  # if not have a photo > send text
                 send = await client.send_message(
-                    chat_id=group_id, text=text,
+                    chat_id=group_id,
+                    text=text,
                     reply_parameters=types.ReplyParameters(message_id=topic.id),
-                    reply_markup=reply_markup if not privacy else None
+                    reply_markup=reply_markup if not privacy else None,
                 )
 
             else:
                 async for photo in client.get_chat_photos(tg_id, limit=1):
                     send = await client.send_photo(
-                        chat_id=group_id, photo=await photo.download(in_memory=True),
-                        caption=text, reply_parameters=types.ReplyParameters(message_id=topic.id),
-                        reply_markup=reply_markup if not privacy else None
+                        chat_id=group_id,
+                        photo=await photo.download(in_memory=True),
+                        caption=text,
+                        reply_parameters=types.ReplyParameters(message_id=topic.id),
+                        reply_markup=reply_markup if not privacy else None,
                     )
             break
 
@@ -130,7 +134,9 @@ def is_topic_or_is_user(_, __, msg: Message) -> bool:
         if not (msg.reply_to_top_message_id or msg.reply_to_message_id):  # not in topic
             return False
 
-        topic_id = topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
+        topic_id = (
+            topic if (topic := msg.reply_to_top_message_id) else msg.reply_to_message_id
+        )
 
         if repository.is_topic_id_exists(topic_id=topic_id):  # topic exists
             return True
@@ -145,9 +151,24 @@ def is_not_raw(_, __, msg: Message) -> bool:
     A message is received that is only supported in 'raw message'
     """
 
-    if msg.text or msg.game or msg.command or msg.photo or msg.document or msg.voice \
-            or msg.service or msg.media or msg.audio or msg.video or msg.contact \
-            or msg.location or msg.sticker or msg.poll or msg.animation or msg.venue:
+    if (
+        msg.text
+        or msg.game
+        or msg.command
+        or msg.photo
+        or msg.document
+        or msg.voice
+        or msg.service
+        or msg.media
+        or msg.audio
+        or msg.video
+        or msg.contact
+        or msg.location
+        or msg.sticker
+        or msg.poll
+        or msg.animation
+        or msg.venue
+    ):
         return True
 
     return False
@@ -159,7 +180,7 @@ def is_admin(_, __, msg: Message) -> bool:
     """
 
     if not repository.is_admin_exists(tg_id=msg.from_user.id):
-        msg.reply(resolve_msg(key='IS_ADMIN'))
+        msg.reply(resolve_msg(key="IS_ADMIN"))
         return False
     return True
 
@@ -170,18 +191,16 @@ def is_have_a_group(_, __, msg: Message):
     """
 
     if not repository.check_if_have_a_group():
-
         if repository.is_admin_exists(tg_id=msg.from_user.id):
-
             if not msg.service:
                 if msg.command:
-                    if msg.command[0] == 'add_group':
+                    if msg.command[0] == "add_group":
                         return False
 
-                msg.reply(resolve_msg(key='GROUP_NOT_EXISTS'))
+                msg.reply(resolve_msg(key="GROUP_NOT_EXISTS"))
 
         else:
-            msg.reply(resolve_msg(key='BOT_NOT_WORKING'))
+            msg.reply(resolve_msg(key="BOT_NOT_WORKING"))
 
         return False
 
