@@ -5,7 +5,7 @@ from tg import filters as tg_filters
 from tg.broadcast import send_message, get_message_for_subscribe
 from tg.command import (
     get_info_command,
-    protect,
+    protect_messages,
     request_group,
     raw_update,
     send_welcome,
@@ -48,7 +48,7 @@ HANDLERS = [
         & pyrogram.filters.create(tg_filters.is_have_a_group),
     ),
     handlers.MessageHandler(
-        protect,
+        protect_messages,
         pyrogram.filters.command(["protect", "unprotect"])
         & pyrogram.filters.text
         & pyrogram.filters.group

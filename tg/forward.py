@@ -210,7 +210,7 @@ async def forward_message_from_topic(cli: Client, msg: Message):
     )
     tg_user = repository.get_user_by_topic_id(topic_id=topic_id)
     tg_id = tg_user.id
-    is_protect = tg_user.protect
+    is_protect = tg_user.protect_messages
     reply = get_reply_to_message_by_topic(msg=msg)
 
     try:
